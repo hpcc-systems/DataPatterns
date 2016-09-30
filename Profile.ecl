@@ -1,0 +1,1023 @@
+/***
+ * Function macro for profiling all or part of a dataset.  The output is a
+ * dataset containing the following information for each profiled attribute:
+ *
+ *      attribute               The name of the attribute
+ *      given_attribute_type    The ECL type of the attribute as it was defined
+ *                              in the input dataset
+ *      rec_count               The number of records in the dataset
+ *      fill_rate               The percentage of records containing non-nil
+ *                              values; a 'nil value' is an empty string or
+ *                              a numeric zero; note that BOOLEAN attributes
+ *                              are always counted as filled, regardless of
+ *                              their value
+ *      cardinality             The number of unique, non-nil values within
+ *                              the attribute
+ *      best_attribute_type     And ECL data type that both allows all values
+ *                              in the input dataset and consumes the least
+ *                              amount of memory
+ *      modes                   The most common values in the attribute, after
+ *                              coercing all values to STRING, along with the
+ *                              number of records in which the values were
+ *                              found; if no value is repeated more than once
+ *                              then no mode will be shown; up to five (5)
+ *                              modes will be shown; note that string values
+ *                              longer than the maxPatternLen argument will
+ *                              be truncated
+ *      min_length              The shortest length of a value when expressed
+ *                              as a string; null values are ignored
+ *      max_length              The longest length of a value when expressed
+ *                              as a string
+ *      ave_length              The average length of a value when expressed
+ *                              as a string
+ *      popular_patterns        The most common patterns of values; see below
+ *      rare_patterns           The least common patterns of values; see below
+ *      is_numeric              Boolean indicating if the original attribute
+ *                              was numeric and therefore whether or not
+ *                              the numeric_xxxx output fields will be
+ *                              populated with actual values; if this value
+ *                              is FALSE then all numeric_xxxx output values
+ *                              should be ignored
+ *      numeric_min             The smallest non-nil value found within the
+ *                              attribute as a DECIMAL; the attribute must be
+ *                              a numeric ECL datatype; non-numeric attributes
+ *                              will return zero
+ *      numeric_max             The largest non-nil value found within the
+ *                              attribute as a DECIMAL; the attribute must be
+ *                              a numeric ECL datatype; non-numeric attributes
+ *                              will return zero
+ *      numeric_mean            The mean (average) non-nil value found within
+ *                              the attribute as a DECIMAL; the attribute must
+ *                              be a numeric ECL datatype; non-numeric
+ *                              attributes will return zero
+ *      numeric_std_dev         The standard deviation of the non-nil values
+ *                              in the attribute as a DECIMAL; the attribute
+ *                              must be a numeric ECL datatype; non-numeric
+ *                              attributes will return zero
+ *      numeric_first_quartile  The value separating the first (bottom) and
+ *                              second quarters of non-nil values within
+ *                              the attribute as a DECIMAL; the attribute must
+ *                              be a numeric ECL datatype; non-numeric
+ *                              attributes will return zero
+ *      numeric_median          The median non-nil value within the attribute
+ *                              as a DECIMAL; the attribute must be a numeric
+ *                              ECL datatype; non-numeric attributes will return
+ *                              zero
+ *      numeric_third_quartile  The value separating the third and fourth
+ *                              (top) quarters of non-nil values within
+ *                              the attribute as a DECIMAL; the attribute must
+ *                              be a numeric ECL datatype; non-numeric
+ *                              attributes will return zero
+ *      numeric_correlations    A child dataset containing correlation values
+ *                              comparing the current numeric attribute with all
+ *                              other numeric attributes, listed in descending
+ *                              correlation value order; the attribute must be
+ *                              a numeric ECL datatype; non-numeric attributes
+ *                              will return an empty child dataset; note that
+ *                              this can be a time-consuming operation,
+ *                              depending on the number of numeric attributes
+ *                              in your dataset and the number of rows (if you
+ *                              have N numeric attributes, then
+ *                              N * (N - 1) / 2 calculations are performed,
+ *                              each scanning all data rows)
+ *
+ * Most profile outputs can be disabled (though the record structure of the
+ * result does not change).  See the 'features' argument, below.
+ *
+ * Data patterns can give you an idea of what your data looks like when it is
+ * expressed as a (human-readable) string.  The function converts each
+ * character of the string into a fixed character palette to producing a "data
+ * pattern" and then counts the number of unique patterns for that attribute.
+ * The character palette used is:
+ *
+ *      A   Any uppercase letter
+ *      a   Any lowercase letter
+ *      9   Any numeric digit
+ *      B   A boolean value (true or false)
+ *
+ * All other characters are left as-is in the pattern.
+ *
+ * Only the top level attributes within a dataset are processed; embedded
+ * records and child recordsets are skipped.  SET data types (such as
+ * SET OF INTEGER) are also skipped.  If the dataset contains only
+ * embedded records and/or child recordsets, or if fieldListStr is specified
+ * but with attributes that don't actually exist in the top level (or are
+ * invalid) then an error will be produced during compilation time.
+ *
+ * This function works best when the incoming dataset contains attributes that
+ * have precise data types (e.g. UNSIGNED4 data types instead of numbers
+ * stored in a STRING data type).
+ *
+ * Function parameters:
+ *
+ * @param   inFile          The dataset to process; REQUIRED
+ * @param   fieldListStr    A string containing a comma-delimited list of
+ *                          attribute names to process; use an empty string to
+ *                          process all attributes in inFile; attributes named
+ *                          here that are not found in the top level of inFile
+ *                          will be ignored; OPTIONAL, defaults to an
+ *                          empty string
+ * @param   maxPatterns     The maximum number of patterns (both popular and
+ *                          rare) to return for each attribute; OPTIONAL,
+ *                          defaults to 100
+ * @param   maxPatternLen   The maximum length of a pattern; longer patterns
+ *                          are truncated in the output; this value is also
+ *                          used to set the maximum length of the data to
+ *                          consider when finding cardinality and mode values;
+ *                          must be 33 or larger; OPTIONAL, defaults to 100
+ * @param   features        A comma-delimited string listing the profiling
+ *                          elements to be included in the output; OPTIONAL,
+ *                          defaults to a comma-delimited string containing all
+ *                          of the available keywords:
+ *                              KEYWORD         AFFECTED OUTPUT
+ *                              fill_rate       fill_rate
+ *                              best_ecl_types  best_attribute_type
+ *                              cardinality     cardinality
+ *                              modes           modes
+ *                              lengths         min_length
+ *                                              max_length
+ *                                              ave_length
+ *                              patterns        popular_patterns
+ *                                              rare_patterns
+ *                              min_max         numeric_min
+ *                                              numeric_max
+ *                              mean            numeric_mean
+ *                              std_dev         numeric_std_dev
+ *                              quartiles       numeric_first_quartile
+ *                                              numeric_median
+ *                                              numeric_third_quartile
+ *                              correlations    numeric_correlations
+ *                          To omit the output associated with a single keyword,
+ *                          set this argument to a comma-delimited string
+ *                          containing all other keywords; note that omitting a
+ *                          profiling element does not change the resulting
+ *                          record structure; the omitted element will simply
+ *                          contain zeroes, empty strings, or empty child
+ *                          datasets; this function will always output the
+ *                          attribute name, given attribute type, and the record
+ •                          count, no matter what features are chosen
+ */
+EXPORT Profile(inFile,
+               fieldListStr = '\'\'',
+               maxPatterns = 100,
+               maxPatternLen = 100,
+               features = '\'fill_rate,best_ecl_types,cardinality,modes,lengths,patterns,min_max,mean,std_dev,quartiles,correlations\'') := FUNCTIONMACRO
+    LOADXML('<xml/>');
+    #EXPORTXML(inFileFields, RECORDOF(inFile));
+    #DECLARE(recLevel);                             // Will be used to ensure we are processing only the top level of the dataset
+    #DECLARE(needsDelim);                           // Boolean indicating whether we need to insert a delimiter somewhere
+    #DECLARE(needsDelim2);                          // Another boolean indicating whether we need to insert a delimiter somewhere
+    #DECLARE(attributeSize);                        // Will become the length of the longest attribute name we will be processing
+    #SET(attributeSize, 0);
+    #DECLARE(minMaxPatternLen);                     // The minimum length of a data pattern
+    #SET(minMaxPatternLen, 33);
+    #DECLARE(foundMaxPatternLen);                   // Will become the length of the longest pattern we will be processing
+    #SET(foundMaxPatternLen, %minMaxPatternLen%);   // Minimum length for an attribute pattern
+    #DECLARE(explicitFields);                       // Attributes from fieldListStr that are found in the top level of the dataset
+    #SET(explicitFields, '');
+    #DECLARE(numericFields);                        // Numeric attributes from fieldListStr that are found in the top level of the dataset
+    #SET(numericFields, '');
+
+    // Remove all spaces from field list so we can parse it more easily
+    LOCAL trimmedFieldList := TRIM(fieldListStr, ALL);
+    // Remove all spaces from features list so we can parse it more easily
+    LOCAL trimmedFeatures := TRIM(features, ALL);
+    // The maximum number of mode values to return
+    LOCAL MAX_MODES := 5;
+
+    // Validate that attribute is okay for us to process (not a SET OF XXX
+    // data type, and that either there is no explicit attribute list or the
+    // name is in the list)
+    LOCAL CanProcessAttribute(STRING attrName, STRING attrType) := (attrType[..7] != 'set of ' AND (trimmedFieldList = '' OR REGEXFIND('(^|,)' + attrName + '(,|$)', trimmedFieldList, NOCASE)));
+
+    // Useful functions for pattern mapping
+    LOCAL MapUpperCharStr(STRING s) := REGEXREPLACE('[[:upper:]]', s, 'A');
+    LOCAL MapLowerCharStr(STRING s) := REGEXREPLACE('[[:lower:]]', s, 'a');
+    LOCAL MapDigitStr(STRING s) := REGEXREPLACE('[[:digit:]]', s, '9');
+    LOCAL MapAllStr(STRING s) := MapDigitStr(MapLowerCharStr(MapUpperCharStr(s)));
+
+    LOCAL MapUpperCharUni(UNICODE s) := REGEXREPLACE(u'[[:upper:]]', s, u'A');
+    LOCAL MapLowerCharUni(UNICODE s) := REGEXREPLACE(u'[[:lower:]]', s, u'a');
+    LOCAL MapDigitUni(UNICODE s) := REGEXREPLACE(u'[[:digit:]]', s, u'9');
+    LOCAL MapAllUni(UNICODE s) := (STRING)MapDigitUni(MapLowerCharUni(MapUpperCharUni(s)));
+
+    LOCAL TrimmedStr(STRING s) := TRIM(s, LEFT, RIGHT);
+    LOCAL TrimmedUni(UNICODE s) := TRIM(s, LEFT, RIGHT);
+
+    // Determine the maximum length of an attribute name that we will be
+    // processing; this will be used to determine the length of the fixed-width
+    // string datatype used to store the attribute name; along the way, collect
+    // a list of the top-level attributes that we can process and the also
+    // determine the actual maximum length of a data pattern (if we can reduce
+    // that length then we can save on memory allocation); while we're at it,
+    // collect the numeric fields for correlation
+    #SET(needsDelim, 0)
+    #SET(needsDelim2, 0)
+    #SET(recLevel, 0)
+    #FOR(inFileFields)
+        #FOR(field)
+            #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
+                #SET(recLevel, %recLevel% + 1)
+            #ELSEIF(%{@isEnd}% = 1)
+                #SET(recLevel, %recLevel% - 1)
+            #ELSEIF(%recLevel% = 0)
+                #IF(CanProcessAttribute(%'@name'%, %'@type'%))
+                    #SET(attributeSize, MAX(%attributeSize%, LENGTH(%'@name'%)))
+
+                    #IF(%needsDelim% = 1)
+                        #APPEND(explicitFields, ',')
+                    #END
+                    #APPEND(explicitFields, %'@name'%)
+                    #SET(needsDelim, 1)
+
+                    #IF(REGEXFIND('(string)|(data)|(utf)', %'@type'%))
+                        #IF(%@size% < 0)
+                            #SET(foundMaxPatternLen, MAX(maxPatternLen, %foundMaxPatternLen%))
+                        #ELSE
+                            #SET(foundMaxPatternLen, MIN(MAX(%@size%, %foundMaxPatternLen%), maxPatternLen))
+                        #END
+                    #ELSEIF(REGEXFIND('unicode', %'@type'%))
+                        // Unicode is UTF-16 so the size reflects two bytes per character
+                        #IF(%@size% < 0)
+                            #SET(foundMaxPatternLen, MAX(maxPatternLen, %foundMaxPatternLen%))
+                        #ELSE
+                            #SET(foundMaxPatternLen, MIN(MAX(%@size% DIV 2 + 1, %foundMaxPatternLen%), maxPatternLen))
+                        #END
+                    #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
+                        #IF(%needsDelim2% = 1)
+                            #APPEND(numericFields, ',')
+                        #END
+                        #APPEND(numericFields, %'@name'%)
+                        #SET(needsDelim2, 1)
+                    #END
+                #END
+            #END
+        #END
+    #END
+
+    // Error check:  If attributeSize is still zero then we don't have any
+    // attributes to process
+    #IF(%attributeSize% = 0)
+        #ERROR('No valid top-level record attributes to process')
+    #END
+
+    // Typedefs
+    LOCAL Attribute_t := #EXPAND('STRING' + %'attributeSize'%);
+    LOCAL DataPattern_t := #EXPAND('STRING' + %'foundMaxPatternLen'%);
+    LOCAL StringValue_t := #EXPAND('STRING' + %'foundMaxPatternLen'%);
+    LOCAL AttributeType_t := STRING36;
+    LOCAL NumericStat_t := DECIMAL32_4;
+
+    // Ungroup the given dataset, in case it was grouped
+    LOCAL ungroupedInFile := UNGROUP(inFile);
+
+    // Create a smaller dataset to distribute if the caller provided an explicit
+    // set of attributes
+    LOCAL workingInFile :=
+        #IF(fieldListStr = '')
+            ungroupedInFile
+        #ELSE
+            TABLE(ungroupedInFile, {%explicitFields%})
+        #END;
+
+    // Distribute the inbound dataset across all our nodes for faster processing
+    LOCAL distributedInFile := DISTRIBUTE(workingInFile, SKEW(0.05));
+
+    // Create a dataset containing pattern information, string length, and
+    // booleans indicating filled and numeric datatypes for each processed
+    // attribute; note that this is created by appending a series of PROJECT
+    // results; to protect against skew problems when dealing with attributes
+    // with low cardinality, and to attempt to reduce our temporary storage
+    // footprint, create a reduced dataset that contains unique values for
+    // our attributes and the number of times the values appear, as well as
+    // some of the other interesting bits we can collect at the same time; note
+    // that we try to explicitly target the original attribute's data type and
+    // perform the minimal amount of work necessary on the value to transform
+    // it to our common structure
+
+    LOCAL DataInfoRec := RECORD
+        Attribute_t         attribute;
+        AttributeType_t     given_attribute_type;
+        StringValue_t       string_value;
+        UNSIGNED4           value_count;
+        DataPattern_t       data_pattern;
+        UNSIGNED4           data_length;
+        BOOLEAN             is_filled;
+        BOOLEAN             is_number;
+    END;
+
+    LOCAL dataInfo :=
+        #SET(recLevel, 0)
+        #SET(needsDelim, 0)
+        #FOR(inFileFields)
+            #FOR(field)
+                #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
+                    #SET(recLevel, %recLevel% + 1)
+                #ELSEIF(%{@isEnd}% = 1)
+                    #SET(recLevel, %recLevel% - 1)
+                #ELSEIF(%recLevel% = 0)
+                    #IF(CanProcessAttribute(%'@name'%, %'@type'%))
+                        #IF(%needsDelim% = 1) + #END
+
+                        PROJECT
+                            (
+                                TABLE
+                                    (
+                                        distributedInFile,
+                                        {
+                                            Attribute_t     attribute := %'@name'%,
+                                            AttributeType_t given_attribute_type := %'@ecltype'%,
+                                            StringValue_t   string_value :=
+                                                                #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', %'@type'%))
+                                                                    (StringValue_t)%@name%
+                                                                #ELSEIF(REGEXFIND('string', %'@type'%))
+                                                                    TrimmedStr(%@name%)
+                                                                #ELSE
+                                                                    TrimmedStr((StringValue_t)%@name%)
+                                                                #END,
+                                            UNSIGNED4       value_count := COUNT(GROUP),
+                                            DataPattern_t   data_pattern :=
+                                                                #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
+                                                                    MapAllStr((STRING)%@name%)
+                                                                #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
+                                                                    #IF(%@size% < 0 OR (%@size% DIV 2 + 1) > %foundMaxPatternLen%)
+                                                                        MapAllUni(TrimmedUni((UNICODE)%@name%)[..%foundMaxPatternLen%])
+                                                                    #ELSE
+                                                                        MapAllUni(TrimmedUni((UNICODE)%@name%))
+                                                                    #END
+                                                                #ELSEIF(REGEXFIND('string', %'@type'%))
+                                                                    #IF(%@size% < 0 OR %@size% > %foundMaxPatternLen%)
+                                                                        MapAllStr(TrimmedStr(%@name%)[..%foundMaxPatternLen%])
+                                                                    #ELSE
+                                                                        MapAllStr(TrimmedStr(%@name%))
+                                                                    #END
+                                                                #ELSEIF(%'@type'% = 'boolean')
+                                                                    'B'
+                                                                #ELSE
+                                                                    MapAllStr(TrimmedStr((STRING)%@name%)[..%foundMaxPatternLen%])
+                                                                #END,
+                                            UNSIGNED4       data_length :=
+                                                                #IF(REGEXFIND('(unicode)|(utf)', %'@type'%))
+                                                                    LENGTH(TrimmedUni((UNICODE)%@name%))
+                                                                #ELSEIF(REGEXFIND('string', %'@type'%))
+                                                                    LENGTH(TrimmedStr(%@name%))
+                                                                #ELSEIF(%'@type'% = 'boolean')
+                                                                    1
+                                                                #ELSE
+                                                                    LENGTH((STRING)%@name%)
+                                                                #END,
+                                            BOOLEAN         is_filled :=
+                                                                #IF(REGEXFIND('(unicode)|(utf)', %'@type'%))
+                                                                    LENGTH(TrimmedUni(%@name%)) > 0
+                                                                #ELSEIF(REGEXFIND('string', %'@type'%))
+                                                                    LENGTH(TrimmedStr(%@name%)) > 0
+                                                                #ELSEIF(REGEXFIND('data', %'@type'%))
+                                                                    LENGTH(%@name%) > 0
+                                                                #ELSEIF(%'@type'% = 'boolean')
+                                                                    TRUE
+                                                                #ELSE
+                                                                    %@name% != 0
+                                                                #END,
+                                            BOOLEAN         is_number :=
+                                                                #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
+                                                                    TRUE
+                                                                #ELSE
+                                                                    FALSE
+                                                                #END
+                                        },
+                                        %@name%,
+                                        LOCAL
+                                    ),
+                                    TRANSFORM(DataInfoRec, SELF := LEFT)
+                            )
+
+                        #SET(needsDelim, 1)
+                    #END
+                #END
+            #END
+        #END;
+
+    // Get only those attributes that are filled
+    filledDataInfo := dataInfo(is_filled);
+
+    // Determine the best ECL data type for each attribute
+    LOCAL DataTypeEnum := ENUM
+        (
+            UNSIGNED4,
+                AsIs = 0,
+                SignedInteger = 1,
+                UnsignedInteger = 2,
+                SignedFloatingPoint = 4,
+                UnsignedFloatingPoint = 8,
+                ExpNotation = 16
+        );
+
+    LOCAL DataTypeEnum BestTypeFlag(STRING dataPattern) := FUNCTION
+        isSignedInteger := REGEXFIND('^\\-9+$', dataPattern);
+        isUnsignedInteger := REGEXFIND('^\\+?9+$', dataPattern);
+        isSignedFloatingPoint := REGEXFIND('^\\-9*\\.9*$', dataPattern);
+        isUnignedFloatingPoint := REGEXFIND('^9*\\.9*$', dataPattern);
+        isExpNotation := REGEXFIND('^(\\-|\\+)?9+\\.9+a\\-9+$', dataPattern, NOCASE);
+
+        RETURN MAP
+            (
+                isSignedInteger         =>  DataTypeEnum.SignedInteger,
+                isUnsignedInteger       =>  DataTypeEnum.UnsignedInteger,
+                isSignedFloatingPoint   =>  DataTypeEnum.SignedFloatingPoint,
+                isUnignedFloatingPoint  =>  DataTypeEnum.UnsignedFloatingPoint,
+                isExpNotation           =>  DataTypeEnum.ExpNotation,
+                DataTypeEnum.AsIs
+            );
+    END;
+
+    // From SALT
+    LOCAL Len2Size(UNSIGNED2 c) := MAP ( c < 3 => 1, c < 5 => 2, c < 7 => 3, c < 9 => 4, c < 11 => 5, c < 14 => 6, c < 16 => 7, 8 );
+
+    LOCAL attributeTypePatterns := TABLE
+        (
+            filledDataInfo,
+            {
+                attribute,
+                given_attribute_type,
+                data_pattern,
+                data_length,
+                DataTypeEnum    type_flag := BestTypeFlag(TRIM(data_pattern))
+
+            },
+            attribute, given_attribute_type, data_pattern, data_length,
+            MERGE
+        );
+
+    LOCAL attributesWithTypeFlagsSummary := AGGREGATE
+        (
+            attributeTypePatterns,
+            RECORDOF(attributeTypePatterns),
+            TRANSFORM
+                (
+                    RECORDOF(attributeTypePatterns),
+                    SELF.data_length := MAX(LEFT.data_length, RIGHT.data_length) ,
+                    SELF.type_flag := IF(TRIM(RIGHT.attribute) != '', LEFT.type_flag & RIGHT.type_flag, LEFT.type_flag),
+                    SELF := LEFT
+                ),
+            TRANSFORM
+                (
+                    RECORDOF(attributeTypePatterns),
+                    SELF.data_length := MAX(RIGHT1.data_length, RIGHT2.data_length),
+                    SELF.type_flag := RIGHT1.type_flag & RIGHT2.type_flag,
+                    SELF := RIGHT1
+                ),
+            LEFT.attribute
+        );
+
+    LOCAL AttributeTypeRec := RECORD
+        Attribute_t     attribute;
+        AttributeType_t given_attribute_type;
+        AttributeType_t best_attribute_type;
+    END;
+
+    LOCAL attributeBestTypeInfo := PROJECT
+        (
+            attributesWithTypeFlagsSummary,
+            TRANSFORM
+                (
+                    AttributeTypeRec,
+                    SELF.best_attribute_type := MAP
+                        (
+                            REGEXFIND('decimal', LEFT.given_attribute_type)         =>  LEFT.given_attribute_type,
+                            REGEXFIND('data', LEFT.given_attribute_type)            =>  'data' + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, ''),
+                            LEFT.type_flag = DataTypeEnum.SignedInteger             =>  'integer' + Len2Size(LEFT.data_length),
+                            LEFT.type_flag = DataTypeEnum.UnsignedInteger           =>  'unsigned' + Len2Size(LEFT.data_length),
+                            LEFT.type_flag = DataTypeEnum.SignedFloatingPoint       =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
+                            LEFT.type_flag = DataTypeEnum.UnsignedFloatingPoint     =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
+                            LEFT.type_flag = DataTypeEnum.ExpNotation               =>  'real8',
+                            REGEXREPLACE('\\d+$', TRIM(LEFT.given_attribute_type), '') + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, '')
+                        ),
+                    SELF := LEFT
+                )
+        );
+
+    // Record definition for mode values that we'll be returning
+    LOCAL ModeRec := RECORD
+        STRING          value;
+        UNSIGNED4       rec_count;
+    END;
+
+    // Build a set of attributes for quartiles, unique values, and modes for
+    // each processed attribute
+    #SET(recLevel, 0)
+    #FOR(inFileFields)
+        #FOR(field)
+            #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
+                #SET(recLevel, %recLevel% + 1)
+            #ELSEIF(%{@isEnd}% = 1)
+                #SET(recLevel, %recLevel% - 1)
+            #ELSEIF(%recLevel% = 0)
+                #IF(CanProcessAttribute(%'@name'%, %'@type'%))
+                    // Note that we create explicit attributes here for all
+                    // top-level attributes in the dataset that we're
+                    // processing, even if they are not numeric datatypes
+                    #UNIQUENAME(uniqueNumericValueCounts)
+                    %uniqueNumericValueCounts% := PROJECT
+                        (
+                            filledDataInfo(attribute = %'@name'% AND is_number),
+                            TRANSFORM
+                                (
+                                    {
+                                        REAL        value,
+                                        UNSIGNED6   cnt,
+                                        UNSIGNED6   valueEndPos
+                                    },
+                                    SELF.value := (REAL)LEFT.string_value,
+                                    SELF.cnt := LEFT.value_count,
+                                    SELF.valueEndPos := 0
+                                )
+                        );
+
+                    // Explicit attributes containing scalars
+                    LOCAL #EXPAND(%'@name'% + '_min') := MIN(%uniqueNumericValueCounts%, value);
+                    LOCAL #EXPAND(%'@name'% + '_max') := MAX(%uniqueNumericValueCounts%, value);
+                    LOCAL #EXPAND(%'@name'% + '_ave') := SUM(%uniqueNumericValueCounts%, value * cnt) / SUM(%uniqueNumericValueCounts%, cnt);
+                    LOCAL #EXPAND(%'@name'% + '_std_dev') := SQRT(SUM(%uniqueNumericValueCounts%, (value - #EXPAND(%'@name'% + '_ave')) * (value - #EXPAND(%'@name'% + '_ave')) * cnt) / SUM(%uniqueNumericValueCounts%, cnt));
+
+                    // Determine the position of the last record in the original
+                    // dataset that contains a particular value
+                    #UNIQUENAME(uniqueNumericValuePos)
+                    %uniqueNumericValuePos% := ITERATE
+                        (
+                            SORT(%uniqueNumericValueCounts%, value, SKEW(1)),
+                            TRANSFORM
+                                (
+                                    RECORDOF(LEFT),
+                                    SELF.valueEndPos := LEFT.valueEndPos + RIGHT.cnt,
+                                    SELF := RIGHT
+                                )
+                        );
+
+                    // The total number of records in this subset
+                    #UNIQUENAME(wholeNumRecs)
+                    LOCAL %wholeNumRecs% := MAX(%uniqueNumericValuePos%, valueEndPos);
+                    #UNIQUENAME(halfNumRecs);
+                    LOCAL %halfNumRecs% := %wholeNumRecs% DIV 2;
+
+                    // Find the median
+                    #UNIQUENAME(q2Pos1);
+                    LOCAL %q2Pos1% := %halfNumRecs% + (%wholeNumRecs% % 2);
+                    #UNIQUENAME(q2Value1);
+                    LOCAL %q2Value1% := MIN(%uniqueNumericValuePos%(valueEndPos >= %q2Pos1%), value);
+                    #UNIQUENAME(q2Pos2);
+                    LOCAL %q2Pos2% := %q2Pos1% + ((%wholeNumRecs% + 1) % 2);
+                    #UNIQUENAME(q2Value2);
+                    LOCAL %q2Value2% := MIN(%uniqueNumericValuePos%(valueEndPos >= %q2Pos2%), value);
+                    LOCAL #EXPAND(%'@name'% + '_q2_value') := AVE(%q2Value1%, %q2Value2%);
+
+                    // Find the lower quartile
+                    #UNIQUENAME(q1Pos1);
+                    LOCAL %q1Pos1% := (%halfNumRecs% DIV 2) + (%halfNumRecs% % 2);
+                    #UNIQUENAME(q1Value1);
+                    LOCAL %q1Value1% := MIN(%uniqueNumericValuePos%(valueEndPos >= %q1Pos1%), value);
+                    #UNIQUENAME(q1Pos2);
+                    LOCAL %q1Pos2% := %q1Pos1% + ((%halfNumRecs% + 1) % 2);
+                    #UNIQUENAME(q1Value2);
+                    LOCAL %q1Value2% := MIN(%uniqueNumericValuePos%(valueEndPos >= %q1Pos2%), value);
+                    LOCAL #EXPAND(%'@name'% + '_q1_value') := IF(%halfNumRecs% > 0, AVE(%q1Value2%, %q1Value2%), 0);
+
+                    // Find the upper quartile
+                    #UNIQUENAME(q3Pos1);
+                    LOCAL %q3Pos1% := %wholeNumRecs% - (%halfNumRecs% DIV 2) + (%halfNumRecs% % 2);
+                    #UNIQUENAME(q3Value1);
+                    LOCAL %q3Value1% := MIN(%uniqueNumericValuePos%(valueEndPos >= %q3Pos1%), value);
+                    #UNIQUENAME(q3Pos2);
+                    LOCAL %q3Pos2% := %q3Pos1% + ((%halfNumRecs% + 1) % 2);
+                    #UNIQUENAME(q3Value2);
+                    LOCAL %q3Value2% := MIN(%uniqueNumericValuePos%(valueEndPos >= %q3Pos2%), value);
+                    LOCAL #EXPAND(%'@name'% + '_q3_value') := IF(%halfNumRecs% > 0, AVE(%q3Value1%, %q3Value2%), 0);
+
+                    // Derive all unique data values and the number of times
+                    // each occurs in the data
+                    LOCAL #EXPAND(%'@name'% + '_uniq_value_recs') := TABLE
+                        (
+                            filledDataInfo(attribute = %'@name'%),
+                            {
+                                string_value,
+                                UNSIGNED4 rec_count := SUM(GROUP, value_count)
+                            },
+                            string_value,
+                            MERGE
+                        );
+
+                    // Find the mode of the (string) data; using a JOIN here
+                    // to avoid the 10MB limit error that sometimes occurs
+                    // when you use filters to find a single value; also note
+                    // the TOPN calls to reduce the search space, which also
+                    // effectively limit the final result to MAX_MODES records
+                    #UNIQUENAME(topRecords);
+                    %topRecords% := TOPN(#EXPAND(%'@name'% + '_uniq_value_recs'), MAX_MODES, -rec_count);
+                    #UNIQUENAME(topRecord)
+                    %topRecord% := TOPN(%topRecords%, 1, -rec_count);
+                    LOCAL #EXPAND(%'@name'% + '_mode_values') := JOIN
+                        (
+                            %topRecords%,
+                            %topRecord%,
+                            LEFT.rec_count = RIGHT.rec_count,
+                            TRANSFORM
+                                (
+                                    ModeRec,
+                                    SELF.value := LEFT.string_value,
+                                    SELF.rec_count := LEFT.rec_count
+                                ),
+                            SMART
+                        ) : ONWARNING(4531, IGNORE);
+                #END
+            #END
+        #END
+    #END
+
+    // Run correlations on all unique pairs of numeric fields in the data
+
+    LOCAL BaseCorrelationLayout := RECORD
+        Attribute_t     attribute_x;
+        Attribute_t     attribute_y;
+        REAL            corr;
+    END;
+
+    #DECLARE(corrNamePosX);
+    #DECLARE(corrNamePosY);
+    #DECLARE(fieldX);
+    #DECLARE(fieldY);
+    #SET(needsDelim, 0);
+
+    LOCAL correlations0 := DATASET
+        (
+            [
+                #SET(corrNamePosX, 1)
+                #LOOP
+                #SET(fieldX, REGEXFIND('^([^,]+)', %'numericFields'%[%corrNamePosX%..], 1))
+                #IF(%'fieldX'% != '')
+                    #SET(corrNamePosY, %corrNamePosX% + LENGTH(%'fieldX'%) + 1)
+                    #LOOP
+                        #SET(fieldY, REGEXFIND('^([^,]+)', %'numericFields'%[%corrNamePosY%..], 1))
+                        #IF(%'fieldY'% != '')
+                            #IF(%needsDelim% = 1) , #END
+                            {
+                                %'fieldX'%,
+                                %'fieldY'%,
+                                CORRELATION(distributedInFile, %fieldX%, %fieldY%)
+                            }
+                            #SET(needsDelim, 1)
+
+                            #SET(corrNamePosY, %corrNamePosY% + LENGTH(%'fieldY'%) + 1)
+                        #ELSE
+                            #BREAK
+                        #END
+                    #END
+                    #SET(corrNamePosX, %corrNamePosX% + LENGTH(%'fieldX'%) + 1)
+                #ELSE
+                    #BREAK
+                #END
+            #END
+            ],
+            BaseCorrelationLayout
+        );
+
+    // Append a duplicate of the correlations to itself with the X and Y fields
+    // reversed so we can easily merge results on a per-attribute basis later
+    LOCAL correlations := correlations0 + PROJECT
+        (
+            correlations0,
+            TRANSFORM
+                (
+                    RECORDOF(LEFT),
+                    SELF.attribute_x := LEFT.attribute_y,
+                    SELF.attribute_y := LEFT.attribute_x,
+                    SELF := LEFT
+                )
+        );
+
+    //--------------------------------------------------------------------------
+    // Collect individual stats for each attribute; these are grouped by the
+    // criteria used to group them
+    //--------------------------------------------------------------------------
+
+    // Count data patterns used per attribute; extract the most common and
+    // most rare, taking care to not allow the two to overlap
+    LOCAL dataPatternStats := TABLE
+        (
+            DISTRIBUTE(filledDataInfo, HASH32(attribute)),
+            {
+                attribute,
+                data_pattern,
+                UNSIGNED4   rec_count := SUM(GROUP, value_count)
+            },
+            attribute, data_pattern,
+            LOCAL
+        );
+    LOCAL groupedDataPatterns := GROUP(SORT(dataPatternStats, attribute, LOCAL), attribute, LOCAL);
+    LOCAL topDataPatterns := UNGROUP(TOPN(groupedDataPatterns, maxPatterns, -rec_count, data_pattern));
+    LOCAL rareDataPatterns0 := UNGROUP(TOPN(groupedDataPatterns, maxPatterns, rec_count, data_pattern));
+    LOCAL rareDataPatterns := JOIN
+        (
+            rareDataPatterns0,
+            topDataPatterns,
+            LEFT.attribute = RIGHT.attribute AND LEFT.data_pattern = RIGHT.data_pattern,
+            TRANSFORM(LEFT),
+            LEFT ONLY
+        );
+
+    // Find min, max and average data lengths per attribute
+    LOCAL dataLengthStats := TABLE
+        (
+            filledDataInfo,
+            {
+                attribute,
+                UNSIGNED4   min_length := MIN(GROUP, data_length),
+                UNSIGNED4   max_length := MAX(GROUP, data_length),
+                UNSIGNED4   ave_length := AVE(GROUP, data_length)
+            },
+            attribute,
+            MERGE
+        );
+
+    // Count attribute fill rates per attribute; will be turned into
+    // percentages later
+    LOCAL dataFilledStats := TABLE
+        (
+            dataInfo,
+            {
+                attribute,
+                given_attribute_type,
+                UNSIGNED4   rec_count := SUM(GROUP, value_count),
+                UNSIGNED4   filled_count := SUM(GROUP, IF(is_filled, value_count, 0))
+            },
+            attribute, given_attribute_type,
+            MERGE
+        );
+
+    // Compute the cardinality and pull in previously-computed explicit
+    // attribute values at the same time
+    LOCAL cardinalityAndNumerics := DATASET
+        (
+            [
+                #SET(recLevel, 0)
+                #SET(needsDelim, 0)
+                #FOR(inFileFields)
+                    #FOR(field)
+                        #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
+                            #SET(recLevel, %recLevel% + 1)
+                        #ELSEIF(%{@isEnd}% = 1)
+                            #SET(recLevel, %recLevel% - 1)
+                        #ELSEIF(%recLevel% = 0)
+                            #IF(CanProcessAttribute(%'@name'%, %'@type'%))
+                                #IF(%needsDelim% = 1) , #END
+
+                                {
+                                    %'@name'%,
+                                    #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
+                                        TRUE,
+                                    #ELSE
+                                        FALSE,
+                                    #END
+                                    #IF(REGEXFIND('\\bcardinality\\b', trimmedFeatures, NOCASE))
+                                        COUNT(#EXPAND(%'@name'% + '_uniq_value_recs')),
+                                    #ELSE
+                                        0,
+                                    #END
+                                    #IF(REGEXFIND('\\bmin_max\\b', trimmedFeatures, NOCASE))
+                                        #EXPAND(%'@name'% + '_min'),
+                                        #EXPAND(%'@name'% + '_max'),
+                                    #ELSE
+                                        0,
+                                        0,
+                                    #END
+                                    #IF(REGEXFIND('\\bmean\\b', trimmedFeatures, NOCASE))
+                                        #EXPAND(%'@name'% + '_ave'),
+                                    #ELSE
+                                        0,
+                                    #END
+                                    #IF(REGEXFIND('\\bstd_dev\\b', trimmedFeatures, NOCASE))
+                                        #EXPAND(%'@name'% + '_std_dev'),
+                                    #ELSE
+                                        0,
+                                    #END
+                                    #IF(REGEXFIND('\\bquartiles\\b', trimmedFeatures, NOCASE))
+                                        #EXPAND(%'@name'% + '_q1_value'),
+                                        #EXPAND(%'@name'% + '_q2_value'),
+                                        #EXPAND(%'@name'% + '_q3_value'),
+                                    #ELSE
+                                        0,
+                                        0,
+                                        0,
+                                    #END
+                                    #IF(REGEXFIND('\\bmodes\\b', trimmedFeatures, NOCASE))
+                                        #EXPAND(%'@name'% + '_mode_values')(rec_count > 1) // Modes must have more than one instance
+                                    #ELSE
+                                        DATASET([], ModeRec)
+                                    #END
+                                }
+
+                                #SET(needsDelim, 1)
+                            #END
+                        #END
+                    #END
+                #END
+            ],
+            {
+                Attribute_t         attribute,
+                BOOLEAN             is_numeric,
+                UNSIGNED4           cardinality,
+                REAL                numeric_min,
+                REAL                numeric_max,
+                REAL                numeric_mean,
+                REAL                numeric_std_dev,
+                REAL                numeric_first_quartile,
+                REAL                numeric_median,
+                REAL                numeric_third_quartile,
+                DATASET(ModeRec)    modes {MAXCOUNT(MAX_MODES)};
+            }
+        );
+
+    //--------------------------------------------------------------------------
+    // Collect the individual results into a single output dataset
+    //--------------------------------------------------------------------------
+
+    LOCAL PatternCountRec := RECORD
+        STRING                      data_pattern;
+        UNSIGNED4                   rec_count;
+    END;
+
+    LOCAL CorrelationRec := RECORD
+        Attribute_t                 attribute;
+        DECIMAL7_6                  corr;
+    END;
+
+    LOCAL OutputLayout := RECORD
+        STRING                      attribute;
+        UNSIGNED4                   rec_count;
+        STRING                      given_attribute_type;
+        DECIMAL5_2                  fill_rate;
+        UNSIGNED4                   cardinality;
+        STRING                      best_attribute_type;
+        DATASET(ModeRec)            modes {MAXCOUNT(MAX_MODES)};
+        UNSIGNED4                   min_length;
+        UNSIGNED4                   max_length;
+        UNSIGNED4                   ave_length;
+        DATASET(PatternCountRec)    popular_patterns {MAXCOUNT(maxPatterns)};
+        DATASET(PatternCountRec)    rare_patterns {MAXCOUNT(maxPatterns)};
+        BOOLEAN                     is_numeric;
+        NumericStat_t               numeric_min;
+        NumericStat_t               numeric_max;
+        NumericStat_t               numeric_mean;
+        NumericStat_t               numeric_std_dev;
+        NumericStat_t               numeric_first_quartile;
+        NumericStat_t               numeric_median;
+        NumericStat_t               numeric_third_quartile;
+        DATASET(CorrelationRec)     numeric_correlations;
+    END;
+
+    LOCAL final10 := PROJECT
+        (
+            dataFilledStats,
+            TRANSFORM
+                (
+                    OutputLayout,
+                    SELF.attribute := TRIM(LEFT.attribute, RIGHT),
+                    SELF.given_attribute_type := TRIM(LEFT.given_attribute_type, RIGHT),
+                    SELF.rec_count := LEFT.rec_count,
+                    SELF.fill_rate := #IF(REGEXFIND('\\bfill_rate\\b', trimmedFeatures, NOCASE)) LEFT.filled_count / LEFT.rec_count * 100 #ELSE 0 #END,
+                    SELF := []
+                )
+        );
+
+    LOCAL final15 :=
+        #IF(REGEXFIND('\\bbest_ecl_types\\b', trimmedFeatures, NOCASE))
+            JOIN
+                (
+                    final10,
+                    attributeBestTypeInfo,
+                    LEFT.attribute = RIGHT.attribute,
+                    TRANSFORM
+                        (
+                            OutputLayout,
+                            SELF.best_attribute_type := TRIM(RIGHT.best_attribute_type, RIGHT),
+                            SELF := LEFT
+                        ),
+                    LEFT OUTER
+                ) : ONWARNING(4531, IGNORE)
+        #ELSE
+            final10
+        #END;
+
+    LOCAL final20 :=
+        #IF(REGEXFIND('\\blengths\\b', trimmedFeatures, NOCASE))
+            JOIN
+                (
+                    final15,
+                    dataLengthStats,
+                    LEFT.attribute = RIGHT.attribute,
+                    TRANSFORM
+                        (
+                            RECORDOF(LEFT),
+                            SELF := RIGHT,
+                            SELF := LEFT
+                        ),
+                    LEFT OUTER, KEEP(1), SMART
+                ) : ONWARNING(4531, IGNORE)
+        #ELSE
+            final15
+        #END;
+
+    LOCAL final30 :=
+        #IF(REGEXFIND('\\b(cardinality)|(min_max)|(mean)|(std_dev)|(quartiles)|(modes)\\b', trimmedFeatures, NOCASE))
+            JOIN
+                (
+                    final20,
+                    cardinalityAndNumerics,
+                    LEFT.attribute = RIGHT.attribute,
+                    TRANSFORM
+                        (
+                            RECORDOF(LEFT),
+                            SELF := RIGHT,
+                            SELF := LEFT
+                        ),
+                    KEEP(1), SMART
+                ) : ONWARNING(4531, IGNORE)
+        #ELSE
+            final20
+        #END;
+
+    LOCAL final40 :=
+        #IF(REGEXFIND('\\bpatterns\\b', trimmedFeatures, NOCASE))
+            DENORMALIZE
+                (
+                    final30,
+                    topDataPatterns,
+                    LEFT.attribute = RIGHT.attribute,
+                    GROUP,
+                    TRANSFORM
+                        (
+                            RECORDOF(LEFT),
+                            SELF.popular_patterns := SORT(PROJECT(ROWS(RIGHT), TRANSFORM(PatternCountRec, SELF := LEFT)), -rec_count, data_pattern),
+                            SELF := LEFT
+                        ),
+                    LEFT OUTER, SMART
+                ) : ONWARNING(4531, IGNORE)
+        #ELSE
+            final30
+        #END;
+
+    LOCAL final50 :=
+        #IF(REGEXFIND('\\bpatterns\\b', trimmedFeatures, NOCASE))
+            DENORMALIZE
+                (
+                    final40,
+                    rareDataPatterns,
+                    LEFT.attribute = RIGHT.attribute,
+                    GROUP,
+                    TRANSFORM
+                        (
+                            RECORDOF(LEFT),
+                            SELF.rare_patterns := SORT(PROJECT(ROWS(RIGHT), TRANSFORM(PatternCountRec, SELF := LEFT)), rec_count, data_pattern),
+                            SELF := LEFT
+                        ),
+                    LEFT OUTER, SMART
+                ) : ONWARNING(4531, IGNORE)
+        #ELSE
+            final40
+        #END;
+
+    LOCAL final60 :=
+            #IF(REGEXFIND('\\bcorrelations\\b', trimmedFeatures, NOCASE))
+                DENORMALIZE
+                    (
+                        final50,
+                        correlations,
+                        LEFT.attribute = RIGHT.attribute_x,
+                        GROUP,
+                        TRANSFORM
+                            (
+                                RECORDOF(LEFT),
+                                SELF.numeric_correlations := SORT
+                                    (
+                                        PROJECT
+                                            (
+                                                ROWS(RIGHT),
+                                                TRANSFORM
+                                                    (
+                                                        CorrelationRec,
+                                                        SELF.attribute := LEFT.attribute_y,
+                                                        SELF.corr := LEFT.corr
+                                                    )
+                                            ),
+                                        -corr
+                                    ),
+                                SELF := LEFT
+                            ),
+                        LEFT OUTER, SMART
+                    )
+            #ELSE
+                final50
+            #END;
+
+    LOCAL finalData := final60;
+
+    RETURN finalData;
+ENDMACRO;
