@@ -430,7 +430,7 @@ EXPORT Profile(inFile,
             );
     END;
 
-    // From SALT
+    // Estimate integer size from readable data length
     LOCAL Len2Size(UNSIGNED2 c) := MAP ( c < 3 => 1, c < 5 => 2, c < 7 => 3, c < 9 => 4, c < 11 => 5, c < 14 => 6, c < 16 => 7, 8 );
 
     LOCAL attributeTypePatterns := TABLE
