@@ -28,9 +28,9 @@ Documentation as pulled from the beginning of Profile.ecl:
 	profiled attribute:
 
 		 attribute               The name of the attribute
+		 rec_count               The number of records in the dataset
 		 given_attribute_type    The ECL type of the attribute as it was defined
 								 in the input dataset
-		 rec_count               The number of records in the dataset
 		 fill_rate               The percentage of records containing non-nil
 								 values; a 'nil value' is an empty string or
 								 a numeric zero; note that BOOLEAN attributes
@@ -172,15 +172,16 @@ Documentation as pulled from the beginning of Profile.ecl:
 												 numeric_median
 												 numeric_third_quartile
 								 correlations    numeric_correlations
-							 To omit the output associated with a single keyword,
-							 set this argument to a comma-delimited string
-							 containing all other keywords; note that omitting a
-							 profiling element does not change the resulting
-							 record structure; the omitted element will simply
-							 contain zeroes, empty strings, or empty child
-							 datasets; this function will always output the
-							 attribute name, given attribute type, and the record
-							 count, no matter what features are chosen
+                             To omit the output associated with a single keyword,
+                             set this argument to a comma-delimited string
+                             containing all other keywords; note that omitting a
+                             profiling element does not change the resulting
+                             record structure; the omitted element will simply
+                             contain zeroes, empty strings, or empty child
+                             datasets; this function will always output values
+                             for attribute name, record count, given attribute
+                             type, and the is_numeric boolean, no matter what
+                             features are chosen
 
 Here is a very simple example of executing the full data profiling code:
 

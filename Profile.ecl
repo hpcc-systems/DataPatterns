@@ -3,9 +3,9 @@
  * dataset containing the following information for each profiled attribute:
  *
  *      attribute               The name of the attribute
+ *      rec_count               The number of records in the dataset
  *      given_attribute_type    The ECL type of the attribute as it was defined
  *                              in the input dataset
- *      rec_count               The number of records in the dataset
  *      fill_rate               The percentage of records containing non-nil
  *                              values; a 'nil value' is an empty string or
  *                              a numeric zero; note that BOOLEAN attributes
@@ -131,8 +131,8 @@
  *                          of the available keywords:
  *                              KEYWORD         AFFECTED OUTPUT
  *                              fill_rate       fill_rate
- *                              best_ecl_types  best_attribute_type
  *                              cardinality     cardinality
+ *                              best_ecl_types  best_attribute_type
  *                              modes           modes
  *                              lengths         min_length
  *                                              max_length
@@ -153,9 +153,10 @@
  *                          profiling element does not change the resulting
  *                          record structure; the omitted element will simply
  *                          contain zeroes, empty strings, or empty child
- *                          datasets; this function will always output the
- *                          attribute name, given attribute type, and the record
- •                          count, no matter what features are chosen
+ *                          datasets; this function will always output values
+ *                          for attribute name, record count, given attribute
+ *                          type, and the is_numeric boolean, no matter what
+ *                          features are chosen
  */
 EXPORT Profile(inFile,
                fieldListStr = '\'\'',
@@ -407,24 +408,23 @@ EXPORT Profile(inFile,
                 AsIs = 0,
                 SignedInteger = 1,
                 UnsignedInteger = 2,
-                SignedFloatingPoint = 4,
-                UnsignedFloatingPoint = 8,
-                ExpNotation = 16
+                FloatingPoint = 4,
+                ExpNotation = 8
         );
 
     LOCAL DataTypeEnum BestTypeFlag(STRING dataPattern) := FUNCTION
-        isSignedInteger := REGEXFIND('^\\-9+$', dataPattern);
-        isUnsignedInteger := REGEXFIND('^\\+?9+$', dataPattern);
-        isSignedFloatingPoint := REGEXFIND('^\\-9*\\.9*$', dataPattern);
-        isUnignedFloatingPoint := REGEXFIND('^9*\\.9*$', dataPattern);
-        isExpNotation := REGEXFIND('^(\\-|\\+)?9+\\.9+a\\-9+$', dataPattern, NOCASE);
+        isSignedInteger := REGEXFIND('^\\-9{1,19}$', dataPattern);
+        isShortUnsignedInteger := REGEXFIND('^9{1,19}$', dataPattern);
+        isUnsignedInteger := REGEXFIND('^\\+?9{1,20}$', dataPattern);
+        isFloatingPoint := REGEXFIND('^(\\-|\\+)9*\\.9{1,15}$', dataPattern);
+        isExpNotation := REGEXFIND('^(\\-|\\+)?9\\.9{1,6}a\\-9{1,3}$', dataPattern, NOCASE);
 
         RETURN MAP
             (
                 isSignedInteger         =>  DataTypeEnum.SignedInteger,
+                isShortUnsignedInteger  =>  DataTypeEnum.SignedInteger | DataTypeEnum.UnsignedInteger,
                 isUnsignedInteger       =>  DataTypeEnum.UnsignedInteger,
-                isSignedFloatingPoint   =>  DataTypeEnum.SignedFloatingPoint,
-                isUnignedFloatingPoint  =>  DataTypeEnum.UnsignedFloatingPoint,
+                isFloatingPoint         =>  DataTypeEnum.FloatingPoint | DataTypeEnum.ExpNotation,
                 isExpNotation           =>  DataTypeEnum.ExpNotation,
                 DataTypeEnum.AsIs
             );
@@ -483,13 +483,12 @@ EXPORT Profile(inFile,
                     AttributeTypeRec,
                     SELF.best_attribute_type := MAP
                         (
-                            REGEXFIND('decimal', LEFT.given_attribute_type)         =>  LEFT.given_attribute_type,
-                            REGEXFIND('data', LEFT.given_attribute_type)            =>  'data' + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, ''),
-                            LEFT.type_flag = DataTypeEnum.SignedInteger             =>  'integer' + Len2Size(LEFT.data_length),
-                            LEFT.type_flag = DataTypeEnum.UnsignedInteger           =>  'unsigned' + Len2Size(LEFT.data_length),
-                            LEFT.type_flag = DataTypeEnum.SignedFloatingPoint       =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
-                            LEFT.type_flag = DataTypeEnum.UnsignedFloatingPoint     =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
-                            LEFT.type_flag = DataTypeEnum.ExpNotation               =>  'real8',
+                            REGEXFIND('(decimal)|(boolean)', LEFT.given_attribute_type) =>  LEFT.given_attribute_type,
+                            REGEXFIND('data', LEFT.given_attribute_type)                =>  'data' + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, ''),
+                            (LEFT.type_flag & DataTypeEnum.UnsignedInteger) != 0        =>  'unsigned' + Len2Size(LEFT.data_length),
+                            (LEFT.type_flag & DataTypeEnum.SignedInteger) != 0          =>  'integer' + Len2Size(LEFT.data_length),
+                            (LEFT.type_flag & DataTypeEnum.FloatingPoint) != 0          =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
+                            (LEFT.type_flag & DataTypeEnum.ExpNotation) != 0            =>  'real8',
                             REGEXREPLACE('\\d+$', TRIM(LEFT.given_attribute_type), '') + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, '')
                         ),
                     SELF := LEFT
