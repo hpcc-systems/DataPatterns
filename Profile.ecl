@@ -81,8 +81,7 @@
  *                              N * (N - 1) / 2 calculations are performed,
  *                              each scanning all data rows)
  *
- * Most profile outputs can be disabled (though the record structure of the
- * result does not change).  See the 'features' argument, below.
+ * Most profile outputs can be disabled.  See the 'features' argument, below.
  *
  * Data patterns can give you an idea of what your data looks like when it is
  * expressed as a (human-readable) string.  The function converts each
@@ -149,14 +148,10 @@
  *                              correlations    numeric_correlations
  *                          To omit the output associated with a single keyword,
  *                          set this argument to a comma-delimited string
- *                          containing all other keywords; note that omitting a
- *                          profiling element does not change the resulting
- *                          record structure; the omitted element will simply
- *                          contain zeroes, empty strings, or empty child
- *                          datasets; this function will always output values
- *                          for attribute name, record count, given attribute
- *                          type, and the is_numeric boolean, no matter what
- *                          features are chosen
+ *                          containing all other keywords; note that the
+ *                          is_numeric output will appear only if min_max,
+ *                          mean, std_dev, quartiles, or correlations features
+ *                          are active
  */
 EXPORT Profile(inFile,
                fieldListStr = '\'\'',
@@ -1016,7 +1011,55 @@ EXPORT Profile(inFile,
                 final50
             #END;
 
-    LOCAL finalData := final60;
+    LOCAL FinalOutputLayout := RECORD
+        STRING                          attribute;
+        UNSIGNED4                       rec_count;
+        STRING                          given_attribute_type;
+        #IF(REGEXFIND('\\bfill_rate\\b', trimmedFeatures, NOCASE))
+            DECIMAL5_2                  fill_rate;
+        #END
+        #IF(REGEXFIND('\\bcardinality\\b', trimmedFeatures, NOCASE))
+            UNSIGNED4                   cardinality;
+        #END
+        #IF(REGEXFIND('\\bbest_ecl_types\\b', trimmedFeatures, NOCASE))
+            STRING                      best_attribute_type;
+        #END
+        #IF(REGEXFIND('\\bmodes\\b', trimmedFeatures, NOCASE))
+            DATASET(ModeRec)            modes {MAXCOUNT(MAX_MODES)};
+        #END
+        #IF(REGEXFIND('\\blengths\\b', trimmedFeatures, NOCASE))
+            UNSIGNED4                   min_length;
+            UNSIGNED4                   max_length;
+            UNSIGNED4                   ave_length;
+        #END
+        #IF(REGEXFIND('\\bpatterns\\b', trimmedFeatures, NOCASE))
+            DATASET(PatternCountRec)    popular_patterns {MAXCOUNT(maxPatterns)};
+            DATASET(PatternCountRec)    rare_patterns {MAXCOUNT(maxPatterns)};
+        #END
+        #IF(REGEXFIND('\\bmin_max\\b', trimmedFeatures, NOCASE) OR REGEXFIND('\\bmean\\b', trimmedFeatures, NOCASE) OR REGEXFIND('\\bstd_dev\\b', trimmedFeatures, NOCASE) OR REGEXFIND('\\bquartiles\\b', trimmedFeatures, NOCASE) OR REGEXFIND('\\bcorrelations\\b', trimmedFeatures, NOCASE))
+            BOOLEAN                     is_numeric;
+        #END
+        #IF(REGEXFIND('\\bmin_max\\b', trimmedFeatures, NOCASE))
+            NumericStat_t               numeric_min;
+            NumericStat_t               numeric_max;
+        #END
+        #IF(REGEXFIND('\\bmean\\b', trimmedFeatures, NOCASE))
+            NumericStat_t               numeric_mean;
+        #END
+        #IF(REGEXFIND('\\bstd_dev\\b', trimmedFeatures, NOCASE))
+            NumericStat_t               numeric_std_dev;
+        #END
+        #IF(REGEXFIND('\\bquartiles\\b', trimmedFeatures, NOCASE))
+            NumericStat_t               numeric_first_quartile;
+            NumericStat_t               numeric_median;
+            NumericStat_t               numeric_third_quartile;
+        #END
+        #IF(REGEXFIND('\\bcorrelations\\b', trimmedFeatures, NOCASE))
+            DATASET(CorrelationRec)     numeric_correlations;
+        #END
+    END;
+
+    LOCAL finalData := PROJECT(final60, TRANSFORM(FinalOutputLayout, SELF := LEFT));
 
     RETURN finalData;
 ENDMACRO;
