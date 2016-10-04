@@ -715,7 +715,7 @@ EXPORT Profile(inFile,
             LEFT.attribute = RIGHT.attribute AND LEFT.data_pattern = RIGHT.data_pattern,
             TRANSFORM(LEFT),
             LEFT ONLY
-        );
+        ) : ONWARNING(4531, IGNORE);
 
     // Find min, max and average data lengths per attribute
     LOCAL dataLengthStats := TABLE
