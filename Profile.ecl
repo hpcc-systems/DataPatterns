@@ -413,7 +413,7 @@ EXPORT Profile(inFile,
         isSignedInteger := REGEXFIND('^\\-9{1,19}$', dataPattern);
         isShortUnsignedInteger := REGEXFIND('^9{1,19}$', dataPattern);
         isUnsignedInteger := REGEXFIND('^\\+?9{1,20}$', dataPattern);
-        isFloatingPoint := REGEXFIND('^(\\-|\\+)9*\\.9{1,15}$', dataPattern);
+        isFloatingPoint := REGEXFIND('^(\\-|\\+)?9*\\.9{1,15}$', dataPattern);
         isExpNotation := REGEXFIND('^(\\-|\\+)?9\\.9{1,6}a\\-9{1,3}$', dataPattern, NOCASE);
 
         RETURN MAP
