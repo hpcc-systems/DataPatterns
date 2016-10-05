@@ -910,6 +910,7 @@ EXPORT Profile(inFile,
                     TRANSFORM
                         (
                             RECORDOF(LEFT),
+                            SELF.attribute := LEFT.attribute,
                             SELF := RIGHT,
                             SELF := LEFT
                         ),
@@ -929,6 +930,7 @@ EXPORT Profile(inFile,
                     TRANSFORM
                         (
                             RECORDOF(LEFT),
+                            SELF.attribute := LEFT.attribute,
                             SELF := RIGHT,
                             SELF := LEFT
                         ),
