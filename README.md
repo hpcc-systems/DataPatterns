@@ -192,6 +192,14 @@ Here is a very simple example of executing the full data profiling code:
 
 	OUTPUT(profileResults, ALL, NAMED('profileResults'));
 
+The data profiling code can be easily tested with the following code:
+
+	IMPORT DataPatterns;
+	
+	EVALUATE(DataPatterns.Tests);
+
+Note that if the tests pass then the execution will succeed but there will be no output.  You will see a runtime error if any of the tests fail.
+
 ###BestRecordStructure
 
 This is a function macro that, given a dataset, returns an ECL string containing an ECL record definition with each attribute within the record typed to match the data contained in the dataset.  The "best" data types for each attribute, in other words.
