@@ -54,7 +54,7 @@
  *                              in the attribute as a DECIMAL; the attribute
  *                              must be a numeric ECL datatype; non-numeric
  *                              attributes will return zero
- *      numeric_first_quartile  The value separating the first (bottom) and
+ *      numeric_lower_quartile  The value separating the first (bottom) and
  *                              second quarters of non-nil values within
  *                              the attribute as a DECIMAL; the attribute must
  *                              be a numeric ECL datatype; non-numeric
@@ -63,7 +63,7 @@
  *                              as a DECIMAL; the attribute must be a numeric
  *                              ECL datatype; non-numeric attributes will return
  *                              zero
- *      numeric_third_quartile  The value separating the third and fourth
+ *      numeric_upper_quartile  The value separating the third and fourth
  *                              (top) quarters of non-nil values within
  *                              the attribute as a DECIMAL; the attribute must
  *                              be a numeric ECL datatype; non-numeric
@@ -142,9 +142,9 @@
  *                                              numeric_max
  *                              mean            numeric_mean
  *                              std_dev         numeric_std_dev
- *                              quartiles       numeric_first_quartile
+ *                              quartiles       numeric_lower_quartile
  *                                              numeric_median
- *                                              numeric_third_quartile
+ *                                              numeric_upper_quartile
  *                              correlations    numeric_correlations
  *                          To omit the output associated with a single keyword,
  *                          set this argument to a comma-delimited string
@@ -822,9 +822,9 @@ EXPORT Profile(inFile,
                 REAL                numeric_max,
                 REAL                numeric_mean,
                 REAL                numeric_std_dev,
-                REAL                numeric_first_quartile,
+                REAL                numeric_lower_quartile,
                 REAL                numeric_median,
-                REAL                numeric_third_quartile,
+                REAL                numeric_upper_quartile,
                 DATASET(ModeRec)    modes {MAXCOUNT(MAX_MODES)};
             }
         );
@@ -861,9 +861,9 @@ EXPORT Profile(inFile,
         NumericStat_t               numeric_max;
         NumericStat_t               numeric_mean;
         NumericStat_t               numeric_std_dev;
-        NumericStat_t               numeric_first_quartile;
+        NumericStat_t               numeric_lower_quartile;
         NumericStat_t               numeric_median;
-        NumericStat_t               numeric_third_quartile;
+        NumericStat_t               numeric_upper_quartile;
         DATASET(CorrelationRec)     numeric_correlations;
     END;
 
@@ -1050,9 +1050,9 @@ EXPORT Profile(inFile,
             NumericStat_t               numeric_std_dev;
         #END
         #IF(REGEXFIND('\\bquartiles\\b', trimmedFeatures, NOCASE))
-            NumericStat_t               numeric_first_quartile;
+            NumericStat_t               numeric_lower_quartile;
             NumericStat_t               numeric_median;
-            NumericStat_t               numeric_third_quartile;
+            NumericStat_t               numeric_upper_quartile;
         #END
         #IF(REGEXFIND('\\bcorrelations\\b', trimmedFeatures, NOCASE))
             DATASET(CorrelationRec)     numeric_correlations;
