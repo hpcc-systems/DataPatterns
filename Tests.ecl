@@ -1,4 +1,4 @@
-IMPORT Useful.DataPatterns;
+IMPORT DataPatterns;
 
 EXPORT Tests := MODULE
 
