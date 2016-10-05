@@ -35,7 +35,9 @@ Documentation as pulled from the beginning of Profile.ecl:
 	                             values; a 'nil value' is an empty string or
 	                             a numeric zero; note that BOOLEAN attributes
 	                             are always counted as filled, regardless of
-	                             their value
+	                             their value; also, fixed-length DATA attributes
+	                             (e.g. DATA10) are also counted as filled, given
+	                             their typical function of holding data blobs
 	     cardinality             The number of unique, non-nil values within
 	                             the attribute
 	     best_attribute_type     And ECL data type that both allows all values
@@ -79,7 +81,7 @@ Documentation as pulled from the beginning of Profile.ecl:
 	                             in the attribute as a DECIMAL; the attribute
 	                             must be a numeric ECL datatype; non-numeric
 	                             attributes will return zero
-	     numeric_first_quartile  The value separating the first (bottom) and
+	     numeric_lower_quartile  The value separating the first (bottom) and
 	                             second quarters of non-nil values within
 	                             the attribute as a DECIMAL; the attribute must
 	                             be a numeric ECL datatype; non-numeric
@@ -88,7 +90,7 @@ Documentation as pulled from the beginning of Profile.ecl:
 	                             as a DECIMAL; the attribute must be a numeric
 	                             ECL datatype; non-numeric attributes will return
 	                             zero
-	     numeric_third_quartile  The value separating the third and fourth
+	     numeric_upper_quartile  The value separating the third and fourth
 	                             (top) quarters of non-nil values within
 	                             the attribute as a DECIMAL; the attribute must
 	                             be a numeric ECL datatype; non-numeric
@@ -167,9 +169,9 @@ Documentation as pulled from the beginning of Profile.ecl:
 	                                             numeric_max
 	                             mean            numeric_mean
 	                             std_dev         numeric_std_dev
-	                             quartiles       numeric_first_quartile
+	                             quartiles       numeric_lower_quartile
 	                                             numeric_median
-	                                             numeric_third_quartile
+	                                             numeric_upper_quartile
 	                             correlations    numeric_correlations
 	                         To omit the output associated with a single keyword,
 	                         set this argument to a comma-delimited string
@@ -189,6 +191,14 @@ Here is a very simple example of executing the full data profiling code:
 	profileResults := DataPatterns.Profile(ds);
 
 	OUTPUT(profileResults, ALL, NAMED('profileResults'));
+
+The data profiling code can be easily tested with the following code:
+
+	IMPORT DataPatterns;
+	
+	EVALUATE(DataPatterns.Tests);
+
+Note that if the tests pass then the execution will succeed but there will be no output.  You will see a runtime error if any of the tests fail.
 
 ###BestRecordStructure
 
