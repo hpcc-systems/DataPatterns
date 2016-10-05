@@ -79,7 +79,7 @@ Documentation as pulled from the beginning of Profile.ecl:
 	                             in the attribute as a DECIMAL; the attribute
 	                             must be a numeric ECL datatype; non-numeric
 	                             attributes will return zero
-	     numeric_first_quartile  The value separating the first (bottom) and
+	     numeric_lower_quartile  The value separating the first (bottom) and
 	                             second quarters of non-nil values within
 	                             the attribute as a DECIMAL; the attribute must
 	                             be a numeric ECL datatype; non-numeric
@@ -88,7 +88,7 @@ Documentation as pulled from the beginning of Profile.ecl:
 	                             as a DECIMAL; the attribute must be a numeric
 	                             ECL datatype; non-numeric attributes will return
 	                             zero
-	     numeric_third_quartile  The value separating the third and fourth
+	     numeric_upper_quartile  The value separating the third and fourth
 	                             (top) quarters of non-nil values within
 	                             the attribute as a DECIMAL; the attribute must
 	                             be a numeric ECL datatype; non-numeric
@@ -167,9 +167,9 @@ Documentation as pulled from the beginning of Profile.ecl:
 	                                             numeric_max
 	                             mean            numeric_mean
 	                             std_dev         numeric_std_dev
-	                             quartiles       numeric_first_quartile
+	                             quartiles       numeric_lower_quartile
 	                                             numeric_median
-	                                             numeric_third_quartile
+	                                             numeric_upper_quartile
 	                             correlations    numeric_correlations
 	                         To omit the output associated with a single keyword,
 	                         set this argument to a comma-delimited string
