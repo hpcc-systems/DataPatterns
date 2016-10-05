@@ -891,7 +891,7 @@ EXPORT Profile(inFile,
                     TRANSFORM
                         (
                             OutputLayout,
-                            SELF.best_attribute_type := TRIM(RIGHT.best_attribute_type, RIGHT),
+                            SELF.best_attribute_type := IF(TRIM(RIGHT.best_attribute_type, RIGHT) != '', TRIM(RIGHT.best_attribute_type, RIGHT), LEFT.given_attribute_type),
                             SELF := LEFT
                         ),
                     LEFT OUTER
