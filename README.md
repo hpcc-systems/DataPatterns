@@ -35,7 +35,9 @@ Documentation as pulled from the beginning of Profile.ecl:
 	                             values; a 'nil value' is an empty string or
 	                             a numeric zero; note that BOOLEAN attributes
 	                             are always counted as filled, regardless of
-	                             their value
+	                             their value; also, fixed-length DATA attributes
+	                             (e.g. DATA10) are also counted as filled, given
+	                             their typical function of holding data blobs
 	     cardinality             The number of unique, non-nil values within
 	                             the attribute
 	     best_attribute_type     And ECL data type that both allows all values
