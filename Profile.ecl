@@ -418,9 +418,9 @@ EXPORT Profile(inFile,
 
         RETURN MAP
             (
-                isSignedInteger         =>  DataTypeEnum.SignedInteger,
-                isShortUnsignedInteger  =>  DataTypeEnum.SignedInteger | DataTypeEnum.UnsignedInteger,
-                isUnsignedInteger       =>  DataTypeEnum.UnsignedInteger,
+                isSignedInteger         =>  DataTypeEnum.SignedInteger | DataTypeEnum.FloatingPoint | DataTypeEnum.ExpNotation,
+                isShortUnsignedInteger  =>  DataTypeEnum.SignedInteger | DataTypeEnum.UnsignedInteger | DataTypeEnum.FloatingPoint | DataTypeEnum.ExpNotation,
+                isUnsignedInteger       =>  DataTypeEnum.UnsignedInteger | DataTypeEnum.FloatingPoint | DataTypeEnum.ExpNotation,
                 isFloatingPoint         =>  DataTypeEnum.FloatingPoint | DataTypeEnum.ExpNotation,
                 isExpNotation           =>  DataTypeEnum.ExpNotation,
                 DataTypeEnum.AsIs
