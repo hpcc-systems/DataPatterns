@@ -486,6 +486,7 @@ EXPORT Profile(inFile,
                             (LEFT.type_flag & DataTypeEnum.SignedInteger) != 0                  =>  'integer' + Len2Size(LEFT.data_length),
                             (LEFT.type_flag & DataTypeEnum.FloatingPoint) != 0                  =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
                             (LEFT.type_flag & DataTypeEnum.ExpNotation) != 0                    =>  'real8',
+                            REGEXFIND('(real)', LEFT.given_attribute_type)                      =>  LEFT.given_attribute_type,
                             REGEXREPLACE('\\d+$', TRIM(LEFT.given_attribute_type), '') + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, '')
                         ),
                     SELF := LEFT
