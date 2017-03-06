@@ -648,30 +648,30 @@ EXPORT Profile(inFile,
             [
                 #SET(corrNamePosX, 1)
                 #LOOP
-                #SET(fieldX, REGEXFIND('^([^,]+)', %'numericFields'%[%corrNamePosX%..], 1))
-                #IF(%'fieldX'% != '')
-                    #SET(corrNamePosY, %corrNamePosX% + LENGTH(%'fieldX'%) + 1)
-                    #LOOP
-                        #SET(fieldY, REGEXFIND('^([^,]+)', %'numericFields'%[%corrNamePosY%..], 1))
-                        #IF(%'fieldY'% != '')
-                            #IF(%needsDelim% = 1) , #END
-                            {
-                                %'fieldX'%,
-                                %'fieldY'%,
-                                CORRELATION(distributedInFile, %fieldX%, %fieldY%)
-                            }
-                            #SET(needsDelim, 1)
+                    #SET(fieldX, REGEXFIND('^([^,]+)', %'numericFields'%[%corrNamePosX%..], 1))
+                    #IF(%'fieldX'% != '')
+                        #SET(corrNamePosY, %corrNamePosX% + LENGTH(%'fieldX'%) + 1)
+                        #LOOP
+                            #SET(fieldY, REGEXFIND('^([^,]+)', %'numericFields'%[%corrNamePosY%..], 1))
+                            #IF(%'fieldY'% != '')
+                                #IF(%needsDelim% = 1) , #END
+                                {
+                                    %'fieldX'%,
+                                    %'fieldY'%,
+                                    CORRELATION(distributedInFile, %fieldX%, %fieldY%)
+                                }
+                                #SET(needsDelim, 1)
 
-                            #SET(corrNamePosY, %corrNamePosY% + LENGTH(%'fieldY'%) + 1)
-                        #ELSE
-                            #BREAK
+                                #SET(corrNamePosY, %corrNamePosY% + LENGTH(%'fieldY'%) + 1)
+                            #ELSE
+                                #BREAK
+                            #END
                         #END
+                        #SET(corrNamePosX, %corrNamePosX% + LENGTH(%'fieldX'%) + 1)
+                    #ELSE
+                        #BREAK
                     #END
-                    #SET(corrNamePosX, %corrNamePosX% + LENGTH(%'fieldX'%) + 1)
-                #ELSE
-                    #BREAK
                 #END
-            #END
             ],
             BaseCorrelationLayout
         );
