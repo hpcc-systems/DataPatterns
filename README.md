@@ -158,7 +158,7 @@ Documentation as pulled from the beginning of Profile.ecl:
 	                         of the available keywords:
 	                             KEYWORD         AFFECTED OUTPUT
 	                             fill_rate       fill_rate
-	                             fill_count      fill_count
+	                                             fill_count
 	                             cardinality     cardinality
 	                             best_ecl_types  best_attribute_type
 	                             modes           modes

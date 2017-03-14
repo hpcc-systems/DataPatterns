@@ -133,7 +133,7 @@
  *                          of the available keywords:
  *                              KEYWORD         AFFECTED OUTPUT
  *                              fill_rate       fill_rate
- *                              fill_count      fill_count
+ *                                              fill_count
  *                              cardinality     cardinality
  *                              best_ecl_types  best_attribute_type
  *                              modes           modes
@@ -161,7 +161,7 @@ EXPORT Profile(inFile,
                fieldListStr = '\'\'',
                maxPatterns = 100,
                maxPatternLen = 100,
-               features = '\'fill_rate,fill_count,best_ecl_types,cardinality,modes,lengths,patterns,min_max,mean,std_dev,quartiles,correlations\'') := FUNCTIONMACRO
+               features = '\'fill_rate,best_ecl_types,cardinality,modes,lengths,patterns,min_max,mean,std_dev,quartiles,correlations\'') := FUNCTIONMACRO
     LOADXML('<xml/>');
     #EXPORTXML(inFileFields, RECORDOF(inFile));
     #DECLARE(recLevel);                             // Will be used to ensure we are processing only the top level of the dataset
@@ -873,6 +873,7 @@ EXPORT Profile(inFile,
         DATASET(CorrelationRec)     numeric_correlations;
     END;
 
+    LOCAL calculateFillRate := REGEXFIND('\\bfill_rate\\b', trimmedFeatures, NOCASE);
     LOCAL final10 := PROJECT
         (
             dataFilledStats,
@@ -882,8 +883,8 @@ EXPORT Profile(inFile,
                     SELF.attribute := TRIM(LEFT.attribute, RIGHT),
                     SELF.given_attribute_type := TRIM(LEFT.given_attribute_type, RIGHT),
                     SELF.rec_count := LEFT.rec_count,
-                    SELF.fill_rate := #IF(REGEXFIND('\\bfill_rate\\b', trimmedFeatures, NOCASE)) LEFT.filled_count / LEFT.rec_count * 100 #ELSE 0 #END,
-                    SELF.fill_count := #IF(REGEXFIND('\\bfill_count\\b', trimmedFeatures, NOCASE)) LEFT.filled_count #ELSE 0 #END,
+                    SELF.fill_rate := #IF(calculateFillRate) LEFT.filled_count / LEFT.rec_count * 100 #ELSE 0 #END,
+                    SELF.fill_count := #IF(calculateFillRate) LEFT.filled_count #ELSE 0 #END,
                     SELF := []
                 )
         );
@@ -1026,8 +1027,6 @@ EXPORT Profile(inFile,
         STRING                          given_attribute_type;
         #IF(REGEXFIND('\\bfill_rate\\b', trimmedFeatures, NOCASE))
             DECIMAL5_2                  fill_rate;
-        #END
-        #IF(REGEXFIND('\\bfill_count\\b', trimmedFeatures, NOCASE))
             UNSIGNED4                   fill_count;
         #END
         #IF(REGEXFIND('\\bcardinality\\b', trimmedFeatures, NOCASE))
