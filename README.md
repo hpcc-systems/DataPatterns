@@ -1,11 +1,11 @@
-###DataPatterns
+### DataPatterns
 
 DataPatterns is an ECL bundle that provides some basic data profiling and research tools to an ECL programmer.
 
-###License and Version
+### License and Version
 This software is licensed under the Apache v2 license.  A link to the license, as well as the current version of this software, can be found in the [Bundle.ecl](https://github.com/hpcc-systems/DataPatterns/blob/master/Bundle.ecl) file.
 
-###Installation
+### Installation
 
 This code is installed as an ECL Bundle.  Complete instructions for managing ECL Bundles can be found in [The ECL IDE and HPCC Client Tools](http://cdn.hpccsystems.com/releases/CE-Candidate-6.0.6/docs/TheECLIDEandHPCCClientTools-6.0.6-1.pdf) documentation.
 
@@ -19,7 +19,7 @@ After installation, all of the code here becomes available after you import it:
 
 	IMPORT DataPatterns;
 
-###Profile
+### Profile
 
 Documentation as pulled from the beginning of Profile.ecl:
 
@@ -202,7 +202,7 @@ The data profiling code can be easily tested with the following code:
 
 Note that if the tests pass then the execution will succeed but there will be no output.  You will see a runtime error if any of the tests fail.
 
-###BestRecordStructure
+### BestRecordStructure
 
 This is a function macro that, given a dataset, returns an ECL string containing an ECL record definition with each attribute within the record typed to match the data contained in the dataset.  The "best" data types for each attribute, in other words.
 
