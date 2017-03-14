@@ -38,6 +38,7 @@ Documentation as pulled from the beginning of Profile.ecl:
 	                             their value; also, fixed-length DATA attributes
 	                             (e.g. DATA10) are also counted as filled, given
 	                             their typical function of holding data blobs
+	     fill_count              The number of records containing non-nil values
 	     cardinality             The number of unique, non-nil values within
 	                             the attribute
 	     best_attribute_type     And ECL data type that both allows all values
@@ -157,6 +158,7 @@ Documentation as pulled from the beginning of Profile.ecl:
 	                         of the available keywords:
 	                             KEYWORD         AFFECTED OUTPUT
 	                             fill_rate       fill_rate
+	                                             fill_count
 	                             cardinality     cardinality
 	                             best_ecl_types  best_attribute_type
 	                             modes           modes
