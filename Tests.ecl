@@ -38,7 +38,7 @@ EXPORT Tests := MODULE
             ASSERT(Basic_String_Profile[1].modes[1].rec_count = 3),
             ASSERT(Basic_String_Profile[1].min_length = 3),
             ASSERT(Basic_String_Profile[1].max_length = 9),
-            ASSERT(Basic_String_Profile[1].ave_length = 4),
+            ASSERT(Basic_String_Profile[1].ave_length = 5),
             ASSERT(COUNT(Basic_String_Profile[1].popular_patterns) = 4),
             ASSERT(Basic_String_Profile[1].popular_patterns[1].data_pattern = 'Aaa'),
             ASSERT(Basic_String_Profile[1].popular_patterns[1].rec_count = 3),
@@ -150,7 +150,7 @@ EXPORT Tests := MODULE
         UTF8 f_utf8;
         UTF8_de f_utf8_de;
         DATA f_data;
-        DATA256 f_data256;
+        DATA16 f_data16;
         VARSTRING f_varstring;
         VARSTRING256 f_varstring256;
         VARUNICODE f_varunicode;
@@ -357,7 +357,6 @@ EXPORT Tests := MODULE
 
     EXPORT Test_Best_Real_Profile :=
         [
-            ASSERT(Best_Real_Profile[1].attribute = 's'),
             ASSERT(ValueForAttr(Best_Real_Profile, 's1', best_attribute_type) = 'real4'),
             ASSERT(ValueForAttr(Best_Real_Profile, 's2', best_attribute_type) = 'real4'),
             ASSERT(ValueForAttr(Best_Real_Profile, 's3', best_attribute_type) = 'real8'),
@@ -382,7 +381,6 @@ EXPORT Tests := MODULE
 
     EXPORT Test_Best_NaN_Profile :=
         [
-            ASSERT(Best_NaN_Profile[1].attribute = 's'),
             ASSERT(ValueForAttr(Best_NaN_Profile, 's1', best_attribute_type) = 'string21'),
             ASSERT(ValueForAttr(Best_NaN_Profile, 's2', best_attribute_type) = 'string21'),
             ASSERT(ValueForAttr(Best_NaN_Profile, 's3', best_attribute_type) = 'string12'),
