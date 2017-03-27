@@ -27,6 +27,12 @@ After installation, all of the code here becomes available after you import it:
 
     IMPORT DataPatterns;
 
+Note that is possible to use this code without installing it as a bundle.  To do
+so, simply make it available within your IDE and just ignore the Bundle.ecl
+file. With the Windows IDE, the DataPatterns directory must not be a top-level
+item in your repository list; it needs to be installed one level below the top
+level, such as within your "My Files" folder.
+
 ### Profile
 
 Documentation as pulled from the beginning of Profile.ecl:
