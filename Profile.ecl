@@ -1021,6 +1021,27 @@ EXPORT Profile(inFile,
                 final50
             #END;
 
+    // Put attributes in same order as the original dataset
+    LOCAL final70 := DATASET
+        (
+            [
+                #SET(needsDelim, 0)
+                #SET(corrNamePosX, 1)
+                #LOOP
+                    #SET(fieldX, REGEXFIND('^([^,]+)', %'explicitFields'%[%corrNamePosX%..], 1))
+                    #IF(%'fieldX'% != '')
+                        #IF(%needsDelim% = 1) , #END
+                        final60(attribute = %'fieldX'%)[1]
+                        #SET(needsDelim, 1)
+                        #SET(corrNamePosX, %corrNamePosX% + LENGTH(%'fieldX'%) + 1)
+                    #ELSE
+                        #BREAK
+                    #END
+                #END
+            ],
+            RECORDOF(final60)
+        );
+
     LOCAL FinalOutputLayout := RECORD
         STRING                          attribute;
         UNSIGNED4                       rec_count;
@@ -1070,7 +1091,7 @@ EXPORT Profile(inFile,
         #END
     END;
 
-    LOCAL finalData := PROJECT(final60, TRANSFORM(FinalOutputLayout, SELF := LEFT));
+    LOCAL finalData := PROJECT(final70, TRANSFORM(FinalOutputLayout, SELF := LEFT));
 
     RETURN finalData;
 ENDMACRO;
