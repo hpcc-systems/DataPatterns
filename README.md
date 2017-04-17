@@ -13,8 +13,7 @@ as well as the current version of this software, can be found in the
 
 This code is installed as an ECL Bundle.  Complete instructions for managing ECL
 Bundles can be found in [The ECL IDE and HPCC Client
-Tools](http://cdn.hpccsystems.com/releases/CE-Candidate-6.0.6/docs/
-TheECLIDEandHPCCClientTools-6.0.6-1.pdf) documentation.
+Tools](http://cdn.hpccsystems.com/releases/CE-Candidate-6.2.0/docs/TheECLIDEandHPCCClientTools-6.2.0-1.pdf) documentation.
 
 Use the ecl command line tool to install this bundle:
 
