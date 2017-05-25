@@ -1021,25 +1021,40 @@ EXPORT Profile(inFile,
                 final50
             #END;
 
-    // Put attributes in same order as the original dataset
-    LOCAL final70 := DATASET
+    // Create a small dataset that specifies the output order of the named
+    // attributes (which should be the same as the input order)
+    LOCAL attrOrderDS := DATASET
         (
             [
                 #SET(needsDelim, 0)
                 #SET(corrNamePosX, 1)
+                #SET(fieldY, 1)
                 #LOOP
                     #SET(fieldX, REGEXFIND('^([^,]+)', %'explicitFields'%[%corrNamePosX%..], 1))
                     #IF(%'fieldX'% != '')
                         #IF(%needsDelim% = 1) , #END
-                        final60(attribute = %'fieldX'%)[1]
+                        {%fieldY%, %'fieldX'%}
                         #SET(needsDelim, 1)
                         #SET(corrNamePosX, %corrNamePosX% + LENGTH(%'fieldX'%) + 1)
+                        #SET(fieldY, %fieldY% + 1)
                     #ELSE
                         #BREAK
                     #END
                 #END
             ],
-            RECORDOF(final60)
+            {
+                UNSIGNED2   nameOrder,
+                Attribute_t attrName
+            }
+        );
+
+    // Append the attribute order to the results; we will sort on the order
+    // when creating the final output
+    LOCAL final70 := JOIN
+        (
+            final60,
+            attrOrderDS,
+            LEFT.attribute = RIGHT.attrName
         );
 
     LOCAL FinalOutputLayout := RECORD
@@ -1091,7 +1106,7 @@ EXPORT Profile(inFile,
         #END
     END;
 
-    LOCAL finalData := PROJECT(final70, TRANSFORM(FinalOutputLayout, SELF := LEFT));
+    LOCAL finalData := PROJECT(SORT(final70, nameOrder), TRANSFORM(FinalOutputLayout, SELF := LEFT));
 
     RETURN finalData;
 ENDMACRO;
