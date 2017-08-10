@@ -852,7 +852,7 @@ EXPORT Profile(inFile,
         STRING                      attribute;
         UNSIGNED4                   rec_count;
         STRING                      given_attribute_type;
-        DECIMAL5_2                  fill_rate;
+        DECIMAL9_6                  fill_rate;
         UNSIGNED4                   fill_count;
         UNSIGNED4                   cardinality;
         STRING                      best_attribute_type;
@@ -1062,7 +1062,7 @@ EXPORT Profile(inFile,
         UNSIGNED4                       rec_count;
         STRING                          given_attribute_type;
         #IF(REGEXFIND('\\bfill_rate\\b', trimmedFeatures, NOCASE))
-            DECIMAL5_2                  fill_rate;
+            DECIMAL9_6                  fill_rate;
             UNSIGNED4                   fill_count;
         #END
         #IF(REGEXFIND('\\bcardinality\\b', trimmedFeatures, NOCASE))
