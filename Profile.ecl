@@ -1055,7 +1055,7 @@ EXPORT Profile(inFile,
             final60,
             attrOrderDS,
             LEFT.attribute = RIGHT.attrName
-        );
+        ) : ONWARNING(4531, IGNORE);
 
     LOCAL FinalOutputLayout := RECORD
         STRING                          attribute;

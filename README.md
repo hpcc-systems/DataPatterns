@@ -216,7 +216,9 @@ inline it is best to not use Thor for running these tests):
     EVALUATE(DataPatterns.Tests);
 
 If the tests pass then the execution will succeed and there will be no output. 
-You will see a runtime error if any of the tests fail.
+You will see a runtime error if any of the tests fail or if you execute the
+tests on Thor.  Note that it may take some time to compile the code before
+execution.
 
 ### BestRecordStructure
 

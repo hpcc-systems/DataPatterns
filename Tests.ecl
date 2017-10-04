@@ -1,6 +1,18 @@
 IMPORT DataPatterns;
+IMPORT Std;
 
 EXPORT Tests := MODULE
+
+    EXPORT Engine_Test := OUTPUT
+        (
+            IF
+                (
+                    Std.System.Job.Platform() IN ['hthor', 'roxie'],
+                    Std.System.Job.Platform(),
+                    ERROR('This code must be run on hthor or roxie')
+                ),
+            NAMED('Execution_Engine')
+        );
 
     //--------------------------------------------------------------------------
     // Useful functions
@@ -29,7 +41,7 @@ EXPORT Tests := MODULE
             ASSERT(Basic_String_Profile[1].attribute = 's'),
             ASSERT(Basic_String_Profile[1].rec_count = 7),
             ASSERT(Basic_String_Profile[1].given_attribute_type = 'string'),
-            ASSERT(Basic_String_Profile[1].fill_rate = 85.71),
+            ASSERT((DECIMAL9_6)Basic_String_Profile[1].fill_rate = (DECIMAL9_6)85.714286),
             ASSERT(Basic_String_Profile[1].fill_count = 6),
             ASSERT(Basic_String_Profile[1].cardinality = 4),
             ASSERT(Basic_String_Profile[1].best_attribute_type = 'string9'),
