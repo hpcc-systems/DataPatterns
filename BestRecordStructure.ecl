@@ -2,10 +2,10 @@
  * Function macro that leverages DataPatterns to return a string defining the
  * best ECL record structure for input data.
  *
- *      inFile                      The dataset to process
- *      dataPatternsModuleName      The name of the ECL module containing
- *                                  the DataPatterns.ecl attribute; OPTIONAL,
- *                                  defaults to the current module
+ * @param   inFile      The dataset to process
+ *
+ * @return  A string defining the best ECL record structure for the data.
+ *          The string is suitable for copying and pasting into ECL code.
  */
 EXPORT BestRecordStructure(inFile) := FUNCTIONMACRO
     IMPORT Std;
