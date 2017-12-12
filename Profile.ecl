@@ -3,17 +3,22 @@
  * dataset containing the following information for each profiled attribute:
  *
  *      attribute               The name of the attribute
- *      rec_count               The number of records in the dataset
+ *      rec_count               The number of records analyzed in the dataset;
+ *                              this may be fewer than the total number of
+ *                              records, if the optional sampleSize argument
+ *                              was provided with a value less than 100
  *      given_attribute_type    The ECL type of the attribute as it was defined
  *                              in the input dataset
- *      fill_rate               The percentage of records containing non-nil
- *                              values; a 'nil value' is an empty string or
- *                              a numeric zero; note that BOOLEAN attributes
- *                              are always counted as filled, regardless of
- *                              their value; also, fixed-length DATA attributes
- *                              (e.g. DATA10) are also counted as filled, given
- *                              their typical function of holding data blobs
- *      fill_count              The number of records containing non-nil values
+ *      fill_rate               The percentage of rec_count records containing
+ *                              non-nil values; a 'nil value' is an empty
+ *                              string or a numeric zero; note that BOOLEAN
+ *                              attributes are always counted as filled,
+ *                              regardless of their value; also, fixed-length
+ *                              DATA attributes (e.g. DATA10) are also counted
+ *                              as filled, given their typical function of
+ *                              holding data blobs
+ *      fill_count              The number of rec_count records containing
+ *                              non-nil values
  *      cardinality             The number of unique, non-nil values within
  *                              the attribute
  *      best_attribute_type     And ECL data type that both allows all values
@@ -156,12 +161,20 @@
  *                          is_numeric output will appear only if min_max,
  *                          mean, std_dev, quartiles, or correlations features
  *                          are active
+ * @param   sampleSize      A positive integer representing a percentage of
+ *                          inFile to examine, which is useful when analyzing a
+ *                          very large dataset and only an estimated data
+ *                          profile is sufficient; valid range for this
+ *                          argument is 1-100; values outside of this range
+ *                          will be clamped; OPTIONAL, defaults to 100 (which
+ *                          indicates that the entire dataset will be analyzed)
  */
 EXPORT Profile(inFile,
                fieldListStr = '\'\'',
                maxPatterns = 100,
                maxPatternLen = 100,
-               features = '\'fill_rate,best_ecl_types,cardinality,modes,lengths,patterns,min_max,mean,std_dev,quartiles,correlations\'') := FUNCTIONMACRO
+               features = '\'fill_rate,best_ecl_types,cardinality,modes,lengths,patterns,min_max,mean,std_dev,quartiles,correlations\'',
+               sampleSize = 100) := FUNCTIONMACRO
     LOADXML('<xml/>');
     #EXPORTXML(inFileFields, RECORDOF(inFile));
     #DECLARE(recLevel);                             // Will be used to ensure we are processing only the top level of the dataset
@@ -271,13 +284,29 @@ EXPORT Profile(inFile,
     // Ungroup the given dataset, in case it was grouped
     LOCAL ungroupedInFile := UNGROUP(inFile);
 
-    // Create a smaller dataset to distribute if the caller provided an explicit
+    // Clamp the sample size to something reasonable
+    LOCAL clampedSampleSize := MAP
+        (
+            (INTEGER)sampleSize < 1     =>  1,
+            (INTEGER)sampleSize > 100   =>  100,
+            (INTEGER)sampleSize
+        );
+
+    // Create a sample dataset if needed
+    LOCAL sampledData := IF
+        (
+            clampedSampleSize < 100,
+            ENTH(ungroupedInFile, clampedSampleSize, 100, 1, LOCAL),
+            ungroupedInFile
+        );
+
+    // Slim the dataset to distribute if the caller provided an explicit
     // set of attributes
     LOCAL workingInFile :=
         #IF(fieldListStr = '')
-            ungroupedInFile
+            sampledData
         #ELSE
-            TABLE(ungroupedInFile, {%explicitFields%})
+            TABLE(sampledData, {%explicitFields%})
         #END;
 
     // Distribute the inbound dataset across all our nodes for faster processing

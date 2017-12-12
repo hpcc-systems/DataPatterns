@@ -41,17 +41,22 @@ Documentation as pulled from the beginning of Profile.ecl:
     profiled attribute:
 
          attribute               The name of the attribute
-         rec_count               The number of records in the dataset
+         rec_count               The number of records analyzed in the dataset;
+                                 this may be fewer than the total number of
+                                 records, if the optional sampleSize argument
+                                 was provided with a value less than 100
          given_attribute_type    The ECL type of the attribute as it was defined
                                  in the input dataset
-         fill_rate               The percentage of records containing non-nil
-                                 values; a 'nil value' is an empty string or
-                                 a numeric zero; note that BOOLEAN attributes
-                                 are always counted as filled, regardless of
-                                 their value; also, fixed-length DATA attributes
-                                 (e.g. DATA10) are also counted as filled, given
-                                 their typical function of holding data blobs
-         fill_count              The number of records containing non-nil values
+         fill_rate               The percentage of rec_count records containing
+                                 non-nil values; a 'nil value' is an empty
+                                 string or a numeric zero; note that BOOLEAN
+                                 attributes are always counted as filled,
+                                 regardless of their value; also, fixed-length
+                                 DATA attributes (e.g. DATA10) are also counted
+                                 as filled, given their typical function of
+                                 holding data blobs
+         fill_count              The number of rec_count records containing
+                                 non-nil values
          cardinality             The number of unique, non-nil values within
                                  the attribute
          best_attribute_type     And ECL data type that both allows all values
@@ -194,6 +199,13 @@ Documentation as pulled from the beginning of Profile.ecl:
                              is_numeric output will appear only if min_max,
                              mean, std_dev, quartiles, or correlations features
                              are active
+    @param   sampleSize      A positive integer representing a percentage of
+                             inFile to examine, which is useful when analyzing a
+                             very large dataset and only an estimated data
+                             profile is sufficient; valid range for this
+                             argument is 1-100; values outside of this range
+                             will be clamped; OPTIONAL, defaults to 100 (which
+                             indicates that the entire dataset will be analyzed)
 
 Here is a very simple example of executing the full data profiling code:
 
