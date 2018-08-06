@@ -127,7 +127,9 @@ Documentation as pulled from the beginning of Profile.ecl:
     expressed as a (human-readable) string.  The function converts each
     character of the string into a fixed character palette to producing a "data
     pattern" and then counts the number of unique patterns for that attribute.
-    The character palette used is:
+    The most- and least-popular patterns from the data will be shown in the
+    output, along with the number of times that pattern appears and an example
+    (randomly chosen from the actual data).  The character palette used is:
 
          A   Any uppercase letter
          a   Any lowercase letter
