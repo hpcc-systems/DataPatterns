@@ -4,7 +4,7 @@ EXPORT Bundle := MODULE(Std.BundleBase)
     EXPORT Description := 'Data Profile and Pattern Bundle';
     EXPORT Authors := ['Dan S. Camper'];
     EXPORT License := '';
-    EXPORT Copyright := 'Copyright (C) 2016 HPCC Systems';
+    EXPORT Copyright := 'Copyright (C) 2018 HPCC Systems';
     EXPORT DependsOn := [];
-    EXPORT Version := '0.14.0';
+    EXPORT Version := '0.15.0';
 END;
