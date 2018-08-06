@@ -95,7 +95,9 @@
  * expressed as a (human-readable) string.  The function converts each
  * character of the string into a fixed character palette to producing a "data
  * pattern" and then counts the number of unique patterns for that attribute.
- * The character palette used is:
+ * The most- and least-popular patterns from the data will be shown in the
+ * output, along with the number of times that pattern appears and an example
+ * (randomly chosen from the actual data).  The character palette used is:
  *
  *      A   Any uppercase letter
  *      a   Any lowercase letter
@@ -734,11 +736,12 @@ EXPORT Profile(inFile,
             {
                 attribute,
                 data_pattern,
+                STRING      example := string_value[..%foundMaxPatternLen%],
                 UNSIGNED4   rec_count := SUM(GROUP, value_count)
             },
             attribute, data_pattern,
             LOCAL
-        );
+        ) : ONWARNING(2168, IGNORE);
     LOCAL groupedDataPatterns := GROUP(SORT(dataPatternStats, attribute, LOCAL), attribute, LOCAL);
     LOCAL topDataPatterns := UNGROUP(TOPN(groupedDataPatterns, maxPatterns, -rec_count, data_pattern));
     LOCAL rareDataPatterns0 := UNGROUP(TOPN(groupedDataPatterns, maxPatterns, rec_count, data_pattern));
@@ -870,6 +873,7 @@ EXPORT Profile(inFile,
     LOCAL PatternCountRec := RECORD
         STRING                      data_pattern;
         UNSIGNED4                   rec_count;
+        STRING                      example;
     END;
 
     LOCAL CorrelationRec := RECORD
