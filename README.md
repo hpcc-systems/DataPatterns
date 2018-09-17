@@ -230,10 +230,9 @@ execution.
 
 ### BestRecordStructure
 
-This is a function macro that, given a dataset, returns an ECL string containing
-an ECL record definition with each attribute within the record typed to match
-the data contained in the dataset.  The "best" data types for each attribute, in
-other words.
+This is a function macro that, given a dataset, returns a recordset containing
+the "best" record definition for the given dataset.  A maximum of 1M records
+(give or take) will be examined, so edge cases may not be examined.
 
 There is an important limitation in this function:  Child datasets and embedded
 record definitions are ignored entirely (this comes from the fact that this
@@ -251,9 +250,15 @@ Sample call:
 
     recordDefinition := DataPatterns.BestRecordStructure(ds);
 
-    OUTPUT(recordDefinition, NAMED('recordDefinition'));
+    OUTPUT(recordDefinition, NAMED('recordDefinition'), ALL);
 
-Viewing the result in the IDE is preferable for this function, as the returned
-string is preformatted with linefeeds and spaces prefixing attribute names.  If
-you view the result in ECL Watch then the linefeeds are ignored, which puts
-everything on one line.
+The result will be a recordset containing only a STRING field.  The first
+record will always contain 'RECORD' and the last record will always contain
+'END;'.  The records in between will contain declarations for the attributes
+found within the given dataset.  The entire result can be copied and pasted
+into an ECL code module.
+
+Note that, when outputing the result of `BestRecordStructure` to a workunit,
+it is a good idea to add an ALL flag to the OUTPUT function.  This ensures that
+all attributes will be displayed.  Otherwise, if you have more than 100
+attributes in the given dataset, the result will be truncated.
