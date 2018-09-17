@@ -2,17 +2,20 @@
  * Function macro that leverages DataPatterns to return a string defining the
  * best ECL record structure for input data.
  *
- * @param   inFile      The dataset to process
+ * @param   inFile      The dataset to process; REQUIRED
+ * @param   maxRecords  The (approximate) maximum number of records to analyze
+ *                      when determining the best-fitting ECL data type;
+ *                      OPTIONAL, defaults to 1000000
  *
  * @return  A recordset defining the best ECL record structure for the data.
  *          Each record will contain one field declaration, and the list of
  *          declarations will be wrapped with RECORD and END strings.  This
  *          makes the result suitable for copying and pasting.
  */
-EXPORT BestRecordStructure(inFile) := FUNCTIONMACRO
+EXPORT BestRecordStructure(inFile, maxRecords = 1000000) := FUNCTIONMACRO
     IMPORT Std;
 
-    LOCAL samplePercentage := IF(COUNT(inFile) <= 1000000, 100, 100000000 / COUNT(inFile));
+    LOCAL samplePercentage := IF(COUNT(inFile) <= maxRecords, 100, 100 * maxRecords / COUNT(inFile));
     LOCAL patternRes := DataPatterns.Profile(inFile, features := 'best_ecl_types', sampleSize := samplePercentage);
 
     LOCAL OutRec := {STRING s};

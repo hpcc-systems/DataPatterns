@@ -231,8 +231,9 @@ execution.
 ### BestRecordStructure
 
 This is a function macro that, given a dataset, returns a recordset containing
-the "best" record definition for the given dataset.  A maximum of 1M records
-(give or take) will be examined, so edge cases may not be examined.
+the "best" record definition for the given dataset.  By default, a maximum of 1M
+records (give or take) will be examined, so edge cases may be missed.  You can
+override this value by passing in a value for the maxRecords argument.
 
 There is an important limitation in this function:  Child datasets and embedded
 record definitions are ignored entirely (this comes from the fact that this
