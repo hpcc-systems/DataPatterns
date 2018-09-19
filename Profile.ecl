@@ -1092,17 +1092,17 @@ EXPORT Profile(inFile,
 
     LOCAL FinalOutputLayout := RECORD
         STRING                          attribute;
-        UNSIGNED4                       rec_count;
         STRING                          given_attribute_type;
+        #IF(REGEXFIND('\\bbest_ecl_types\\b', trimmedFeatures, NOCASE))
+            STRING                      best_attribute_type;
+        #END
+        UNSIGNED4                       rec_count;
         #IF(REGEXFIND('\\bfill_rate\\b', trimmedFeatures, NOCASE))
-            DECIMAL9_6                  fill_rate;
             UNSIGNED4                   fill_count;
+            DECIMAL9_6                  fill_rate;
         #END
         #IF(REGEXFIND('\\bcardinality\\b', trimmedFeatures, NOCASE))
             UNSIGNED4                   cardinality;
-        #END
-        #IF(REGEXFIND('\\bbest_ecl_types\\b', trimmedFeatures, NOCASE))
-            STRING                      best_attribute_type;
         #END
         #IF(REGEXFIND('\\bmodes\\b', trimmedFeatures, NOCASE))
             DATASET(ModeRec)            modes {MAXCOUNT(MAX_MODES)};
