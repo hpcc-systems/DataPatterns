@@ -3,12 +3,17 @@
  * dataset containing the following information for each profiled attribute:
  *
  *      attribute               The name of the attribute
+ *      given_attribute_type    The ECL type of the attribute as it was defined
+ *                              in the input dataset
+ *      best_attribute_type     And ECL data type that both allows all values
+ *                              in the input dataset and consumes the least
+ *                              amount of memory
  *      rec_count               The number of records analyzed in the dataset;
  *                              this may be fewer than the total number of
  *                              records, if the optional sampleSize argument
  *                              was provided with a value less than 100
- *      given_attribute_type    The ECL type of the attribute as it was defined
- *                              in the input dataset
+ *      fill_count              The number of rec_count records containing
+ *                              non-nil values
  *      fill_rate               The percentage of rec_count records containing
  *                              non-nil values; a 'nil value' is an empty
  *                              string or a numeric zero; note that BOOLEAN
@@ -17,13 +22,8 @@
  *                              DATA attributes (e.g. DATA10) are also counted
  *                              as filled, given their typical function of
  *                              holding data blobs
- *      fill_count              The number of rec_count records containing
- *                              non-nil values
  *      cardinality             The number of unique, non-nil values within
  *                              the attribute
- *      best_attribute_type     And ECL data type that both allows all values
- *                              in the input dataset and consumes the least
- *                              amount of memory
  *      modes                   The most common values in the attribute, after
  *                              coercing all values to STRING, along with the
  *                              number of records in which the values were
