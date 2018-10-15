@@ -37,7 +37,7 @@ Documentation as pulled from the beginning of Profile.ecl:
          attribute               The name of the attribute
          given_attribute_type    The ECL type of the attribute as it was defined
                                  in the input dataset
-         best_attribute_type     And ECL data type that both allows all values
+         best_attribute_type     An ECL data type that both allows all values
                                  in the input dataset and consumes the least
                                  amount of memory
          rec_count               The number of records analyzed in the dataset;
@@ -125,7 +125,7 @@ Documentation as pulled from the beginning of Profile.ecl:
 
     Data patterns can give you an idea of what your data looks like when it is
     expressed as a (human-readable) string.  The function converts each
-    character of the string into a fixed character palette to producing a "data
+    character of the string into a fixed character palette to produce a "data
     pattern" and then counts the number of unique patterns for that attribute.
     The most- and least-popular patterns from the data will be shown in the
     output, along with the number of times that pattern appears and an example
