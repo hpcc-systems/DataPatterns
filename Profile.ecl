@@ -179,18 +179,18 @@ EXPORT Profile(inFile,
                sampleSize = 100) := FUNCTIONMACRO
     LOADXML('<xml/>');
     #EXPORTXML(inFileFields, RECORDOF(inFile));
-    #DECLARE(recLevel);                             // Will be used to ensure we are processing only the top level of the dataset
-    #DECLARE(needsDelim);                           // Boolean indicating whether we need to insert a delimiter somewhere
-    #DECLARE(needsDelim2);                          // Another boolean indicating whether we need to insert a delimiter somewhere
-    #DECLARE(attributeSize);                        // Will become the length of the longest attribute name we will be processing
+    #UNIQUENAME(recLevel);                          // Will be used to ensure we are processing only the top level of the dataset
+    #UNIQUENAME(needsDelim);                        // Boolean indicating whether we need to insert a delimiter somewhere
+    #UNIQUENAME(needsDelim2);                       // Another boolean indicating whether we need to insert a delimiter somewhere
+    #UNIQUENAME(attributeSize);                     // Will become the length of the longest attribute name we will be processing
     #SET(attributeSize, 0);
-    #DECLARE(minMaxPatternLen);                     // The minimum length of a data pattern
+    #UNIQUENAME(minMaxPatternLen);                  // The minimum length of a data pattern
     #SET(minMaxPatternLen, 33);
-    #DECLARE(foundMaxPatternLen);                   // Will become the length of the longest pattern we will be processing
+    #UNIQUENAME(foundMaxPatternLen);                // Will become the length of the longest pattern we will be processing
     #SET(foundMaxPatternLen, %minMaxPatternLen%);   // Minimum length for an attribute pattern
-    #DECLARE(explicitFields);                       // Attributes from fieldListStr that are found in the top level of the dataset
+    #UNIQUENAME(explicitFields);                    // Attributes from fieldListStr that are found in the top level of the dataset
     #SET(explicitFields, '');
-    #DECLARE(numericFields);                        // Numeric attributes from fieldListStr that are found in the top level of the dataset
+    #UNIQUENAME(numericFields);                     // Numeric attributes from fieldListStr that are found in the top level of the dataset
     #SET(numericFields, '');
 
     // Remove all spaces from field list so we can parse it more easily
@@ -670,10 +670,10 @@ EXPORT Profile(inFile,
         REAL            corr;
     END;
 
-    #DECLARE(corrNamePosX);
-    #DECLARE(corrNamePosY);
-    #DECLARE(fieldX);
-    #DECLARE(fieldY);
+    #UNIQUENAME(corrNamePosX);
+    #UNIQUENAME(corrNamePosY);
+    #UNIQUENAME(fieldX);
+    #UNIQUENAME(fieldY);
     #SET(needsDelim, 0);
 
     LOCAL correlations0 := DATASET
