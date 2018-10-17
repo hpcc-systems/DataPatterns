@@ -192,6 +192,7 @@ EXPORT Profile(inFile,
     #SET(explicitFields, '');
     #UNIQUENAME(numericFields);                     // Numeric attributes from fieldListStr that are found in the top level of the dataset
     #SET(numericFields, '');
+    #UNIQUENAME(fieldCount);                        // Used primarily to enable syntax checking of code when dynamic record lookup is enabled
 
     // Remove all spaces from field list so we can parse it more easily
     LOCAL trimmedFieldList := TRIM(fieldListStr, ALL);
@@ -219,6 +220,19 @@ EXPORT Profile(inFile,
     LOCAL TrimmedStr(STRING s) := TRIM(s, LEFT, RIGHT);
     LOCAL TrimmedUni(UNICODE s) := TRIM(s, LEFT, RIGHT);
 
+    // Tests for enabled features
+    LOCAL FeatureEnabledFillRate() := REGEXFIND('\\bfill_rate\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledBestECLTypes() := REGEXFIND('\\bbest_ecl_types\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledCardinality() := REGEXFIND('\\bcardinality\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledModes() := REGEXFIND('\\bmodes\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledLengths() := REGEXFIND('\\blengths\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledPatterns() := REGEXFIND('\\bpatterns\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledMinMax() := REGEXFIND('\\bmin_max\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledMean() := REGEXFIND('\\bmean\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledStdDev() := REGEXFIND('\\bstd_dev\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledQuartiles() := REGEXFIND('\\bquartiles\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledCorrelations() := REGEXFIND('\\bcorrelations\\b', trimmedFeatures, NOCASE);
+
     // Determine the maximum length of an attribute name that we will be
     // processing; this will be used to determine the length of the fixed-width
     // string datatype used to store the attribute name; along the way, collect
@@ -226,11 +240,13 @@ EXPORT Profile(inFile,
     // determine the actual maximum length of a data pattern (if we can reduce
     // that length then we can save on memory allocation); while we're at it,
     // collect the numeric fields for correlation
-    #SET(needsDelim, 0)
-    #SET(needsDelim2, 0)
-    #SET(recLevel, 0)
+    #SET(needsDelim, 0);
+    #SET(needsDelim2, 0);
+    #SET(recLevel, 0);
+    #SET(fieldCount, 0);
     #FOR(inFileFields)
-        #FOR(field)
+        #FOR(Field)
+            #SET(fieldCount, %fieldCount% + 1);
             #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
                 #SET(recLevel, %recLevel% + 1)
             #ELSEIF(%{@isEnd}% = 1)
@@ -272,7 +288,7 @@ EXPORT Profile(inFile,
 
     // Error check:  If attributeSize is still zero then we don't have any
     // attributes to process
-    #IF(%attributeSize% = 0)
+    #IF(%fieldCount% > 0 AND %attributeSize% = 0)
         #ERROR('No valid top-level record attributes to process')
     #END
 
@@ -340,8 +356,10 @@ EXPORT Profile(inFile,
     LOCAL dataInfo :=
         #SET(recLevel, 0)
         #SET(needsDelim, 0)
+        #SET(fieldCount, 0)
         #FOR(inFileFields)
-            #FOR(field)
+            #FOR(Field)
+                #SET(fieldCount, %fieldCount% + 1)
                 #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
                     #SET(recLevel, %recLevel% + 1)
                 #ELSEIF(%{@isEnd}% = 1)
@@ -426,6 +444,11 @@ EXPORT Profile(inFile,
                     #END
                 #END
             #END
+        #END
+
+        // Insert empty value for syntax checking
+        #IF(%fieldCount% = 0)
+            DATASET([], DataInfoRec)
         #END;
 
     // Get only those attributes that are filled
@@ -496,7 +519,8 @@ EXPORT Profile(inFile,
                     SELF.type_flag := RIGHT1.type_flag & RIGHT2.type_flag,
                     SELF := RIGHT1
                 ),
-            LEFT.attribute
+            LEFT.attribute,
+            FEW
         );
 
     LOCAL AttributeTypeRec := RECORD
@@ -534,9 +558,9 @@ EXPORT Profile(inFile,
 
     // Build a set of attributes for quartiles, unique values, and modes for
     // each processed attribute
-    #SET(recLevel, 0)
+    #SET(recLevel, 0);
     #FOR(inFileFields)
-        #FOR(field)
+        #FOR(Field)
             #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
                 #SET(recLevel, %recLevel% + 1)
             #ELSEIF(%{@isEnd}% = 1)
@@ -791,7 +815,7 @@ EXPORT Profile(inFile,
                 #SET(recLevel, 0)
                 #SET(needsDelim, 0)
                 #FOR(inFileFields)
-                    #FOR(field)
+                    #FOR(Field)
                         #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
                             #SET(recLevel, %recLevel% + 1)
                         #ELSEIF(%{@isEnd}% = 1)
@@ -807,29 +831,29 @@ EXPORT Profile(inFile,
                                     #ELSE
                                         FALSE,
                                     #END
-                                    #IF(REGEXFIND('\\bcardinality\\b', trimmedFeatures, NOCASE))
+                                    #IF(FeatureEnabledCardinality())
                                         COUNT(#EXPAND(%'@name'% + '_uniq_value_recs')),
                                     #ELSE
                                         0,
                                     #END
-                                    #IF(REGEXFIND('\\bmin_max\\b', trimmedFeatures, NOCASE))
+                                    #IF(FeatureEnabledMinMax())
                                         #EXPAND(%'@name'% + '_min'),
                                         #EXPAND(%'@name'% + '_max'),
                                     #ELSE
                                         0,
                                         0,
                                     #END
-                                    #IF(REGEXFIND('\\bmean\\b', trimmedFeatures, NOCASE))
+                                    #IF(FeatureEnabledMean())
                                         #EXPAND(%'@name'% + '_ave'),
                                     #ELSE
                                         0,
                                     #END
-                                    #IF(REGEXFIND('\\bstd_dev\\b', trimmedFeatures, NOCASE))
+                                    #IF(FeatureEnabledStdDev())
                                         #EXPAND(%'@name'% + '_std_dev'),
                                     #ELSE
                                         0,
                                     #END
-                                    #IF(REGEXFIND('\\bquartiles\\b', trimmedFeatures, NOCASE))
+                                    #IF(FeatureEnabledQuartiles())
                                         #EXPAND(%'@name'% + '_q1_value'),
                                         #EXPAND(%'@name'% + '_q2_value'),
                                         #EXPAND(%'@name'% + '_q3_value'),
@@ -838,7 +862,7 @@ EXPORT Profile(inFile,
                                         0,
                                         0,
                                     #END
-                                    #IF(REGEXFIND('\\bmodes\\b', trimmedFeatures, NOCASE))
+                                    #IF(FeatureEnabledModes())
                                         #EXPAND(%'@name'% + '_mode_values')(rec_count > 1) // Modes must have more than one instance
                                     #ELSE
                                         DATASET([], ModeRec)
@@ -906,7 +930,6 @@ EXPORT Profile(inFile,
         DATASET(CorrelationRec)     numeric_correlations;
     END;
 
-    LOCAL calculateFillRate := REGEXFIND('\\bfill_rate\\b', trimmedFeatures, NOCASE);
     LOCAL final10 := PROJECT
         (
             dataFilledStats,
@@ -916,14 +939,14 @@ EXPORT Profile(inFile,
                     SELF.attribute := TRIM(LEFT.attribute, RIGHT),
                     SELF.given_attribute_type := TRIM(LEFT.given_attribute_type, RIGHT),
                     SELF.rec_count := LEFT.rec_count,
-                    SELF.fill_rate := #IF(calculateFillRate) LEFT.filled_count / LEFT.rec_count * 100 #ELSE 0 #END,
-                    SELF.fill_count := #IF(calculateFillRate) LEFT.filled_count #ELSE 0 #END,
+                    SELF.fill_rate := #IF(FeatureEnabledFillRate()) LEFT.filled_count / LEFT.rec_count * 100 #ELSE 0 #END,
+                    SELF.fill_count := #IF(FeatureEnabledFillRate()) LEFT.filled_count #ELSE 0 #END,
                     SELF := []
                 )
         );
 
     LOCAL final15 :=
-        #IF(REGEXFIND('\\bbest_ecl_types\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledBestECLTypes())
             JOIN
                 (
                     final10,
@@ -942,7 +965,7 @@ EXPORT Profile(inFile,
         #END;
 
     LOCAL final20 :=
-        #IF(REGEXFIND('\\blengths\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledLengths())
             JOIN
                 (
                     final15,
@@ -962,7 +985,7 @@ EXPORT Profile(inFile,
         #END;
 
     LOCAL final30 :=
-        #IF(REGEXFIND('\\b(cardinality)|(min_max)|(mean)|(std_dev)|(quartiles)|(modes)\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledCardinality() OR FeatureEnabledMinMax() OR FeatureEnabledMean() OR FeatureEnabledStdDev() OR FeatureEnabledQuartiles() OR FeatureEnabledModes())
             JOIN
                 (
                     final20,
@@ -982,7 +1005,7 @@ EXPORT Profile(inFile,
         #END;
 
     LOCAL final40 :=
-        #IF(REGEXFIND('\\bpatterns\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledPatterns())
             DENORMALIZE
                 (
                     final30,
@@ -1002,7 +1025,7 @@ EXPORT Profile(inFile,
         #END;
 
     LOCAL final50 :=
-        #IF(REGEXFIND('\\bpatterns\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledPatterns())
             DENORMALIZE
                 (
                     final40,
@@ -1022,7 +1045,7 @@ EXPORT Profile(inFile,
         #END;
 
     LOCAL final60 :=
-            #IF(REGEXFIND('\\bcorrelations\\b', trimmedFeatures, NOCASE))
+            #IF(FeatureEnabledCorrelations())
                 DENORMALIZE
                     (
                         final50,
@@ -1093,48 +1116,48 @@ EXPORT Profile(inFile,
     LOCAL FinalOutputLayout := RECORD
         STRING                          attribute;
         STRING                          given_attribute_type;
-        #IF(REGEXFIND('\\bbest_ecl_types\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledBestECLTypes())
             STRING                      best_attribute_type;
         #END
         UNSIGNED4                       rec_count;
-        #IF(REGEXFIND('\\bfill_rate\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledFillRate())
             UNSIGNED4                   fill_count;
             DECIMAL9_6                  fill_rate;
         #END
-        #IF(REGEXFIND('\\bcardinality\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledCardinality())
             UNSIGNED4                   cardinality;
         #END
-        #IF(REGEXFIND('\\bmodes\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledModes())
             DATASET(ModeRec)            modes {MAXCOUNT(MAX_MODES)};
         #END
-        #IF(REGEXFIND('\\blengths\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledLengths())
             UNSIGNED4                   min_length;
             UNSIGNED4                   max_length;
             UNSIGNED4                   ave_length;
         #END
-        #IF(REGEXFIND('\\bpatterns\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledPatterns())
             DATASET(PatternCountRec)    popular_patterns {MAXCOUNT(maxPatterns)};
             DATASET(PatternCountRec)    rare_patterns {MAXCOUNT(maxPatterns)};
         #END
-        #IF(REGEXFIND('\\bmin_max\\b', trimmedFeatures, NOCASE) OR REGEXFIND('\\bmean\\b', trimmedFeatures, NOCASE) OR REGEXFIND('\\bstd_dev\\b', trimmedFeatures, NOCASE) OR REGEXFIND('\\bquartiles\\b', trimmedFeatures, NOCASE) OR REGEXFIND('\\bcorrelations\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledMinMax() OR FeatureEnabledMean() OR FeatureEnabledStdDev() OR FeatureEnabledQuartiles() OR FeatureEnabledCorrelations())
             BOOLEAN                     is_numeric;
         #END
-        #IF(REGEXFIND('\\bmin_max\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledMinMax())
             NumericStat_t               numeric_min;
             NumericStat_t               numeric_max;
         #END
-        #IF(REGEXFIND('\\bmean\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledMean())
             NumericStat_t               numeric_mean;
         #END
-        #IF(REGEXFIND('\\bstd_dev\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledStdDev())
             NumericStat_t               numeric_std_dev;
         #END
-        #IF(REGEXFIND('\\bquartiles\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledQuartiles())
             NumericStat_t               numeric_lower_quartile;
             NumericStat_t               numeric_median;
             NumericStat_t               numeric_upper_quartile;
         #END
-        #IF(REGEXFIND('\\bcorrelations\\b', trimmedFeatures, NOCASE))
+        #IF(FeatureEnabledCorrelations())
             DATASET(CorrelationRec)     numeric_correlations;
         #END
     END;

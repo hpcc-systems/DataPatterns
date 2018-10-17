@@ -26,6 +26,13 @@ file. With the Windows IDE, the DataPatterns directory must not be a top-level
 item in your repository list; it needs to be installed one level below the top
 level, such as within your "My Files" folder.
 
+### Release Notes
+
+|Version|Notes|
+|:----:|:-----|
+|1.0.0|Initial public release, finally with support for datasets defined using dynamic record lookup|
+
+
 ### Profile
 
 Documentation as pulled from the beginning of Profile.ecl:
@@ -207,9 +214,9 @@ Here is a very simple example of executing the full data profiling code:
 
     IMPORT DataPatterns;
 
-    DataRec := { string source, unsigned bid, string name };
+    filePath := '~thor::my_sample_data';
 
-    ds := DATASET('~thor::my_sample_data', DataRec, FLAT);
+    ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
 
     profileResults := DataPatterns.Profile(ds);
 
