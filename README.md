@@ -222,18 +222,21 @@ Here is a very simple example of executing the full data profiling code:
 
     OUTPUT(profileResults, ALL, NAMED('profileResults'));
 
-The data profiling code can be easily tested with the included Tests module. 
-Execute the following in either hThor or Roxie (because all of the test data is
-inline it is best to not use Thor for running these tests):
+### ProfileFromPath
+
+You can also profile a logical file by knowing only its path:
 
     IMPORT DataPatterns;
 
-    EVALUATE(DataPatterns.Tests);
+    filePath := '~thor::my_sample_data';
 
-If the tests pass then the execution will succeed and there will be no output. 
-You will see a runtime error if any of the tests fail or if you execute the
-tests on Thor.  Note that it may take some time to compile the code before
-execution.
+    profileResults := DataPatterns.ProfileFromPath(filePath);
+
+    OUTPUT(profileResults, ALL, NAMED('profileResults'));
+
+`ProfileFromPath` accepts the same arguments as `Profile`, with the exception
+of `fieldListStr` (the assumption is, if you know the fields then you know
+enough to construct a dataset and can use `Profile` instead).
 
 ### BestRecordStructure
 
@@ -254,9 +257,9 @@ Sample call:
 
     IMPORT DataPatterns;
 
-    DataRec := { string source, unsigned bid, string name };
+    filePath := '~thor::my_sample_data';
 
-    ds := DATASET('~thor::my_sample_data', DataRec, FLAT);
+    ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
 
     recordDefinition := DataPatterns.BestRecordStructure(ds);
 
@@ -272,3 +275,33 @@ Note that, when outputing the result of `BestRecordStructure` to a workunit,
 it is a good idea to add an ALL flag to the OUTPUT function.  This ensures that
 all attributes will be displayed.  Otherwise, if you have more than 100
 attributes in the given dataset, the result will be truncated.
+
+### BestRecordStructureFromPath
+
+Similar to `ProfileFromPath`, you can obtain the best ECL record structure for
+a logical file given only its path:
+
+    IMPORT DataPatterns;
+
+    filePath := '~thor::my_sample_data';
+
+    recordDefinition := DataPatterns.BestRecordStructureFromPath(filePath);
+
+    OUTPUT(recordDefinition, NAMED('recordDefinition'), ALL);
+
+`BestRecordStructureFromPath` accepts the same arguments as
+`BestRecordStructure`.
+
+### Testing
+
+The data profiling code can be easily tested with the included Tests module.
+hthor or ROXIE should be used to execute the tests, simply because Thor takes a
+relatively long time to execute them.  Here is how you invoke the tests:
+
+    IMPORT DataPatterns;
+
+    EVALUATE(DataPatterns.Tests);
+
+If the tests pass then the execution will succeed and there will be no output.
+These tests may take some time to execute on Thor.  They run much faster on
+either hthor or ROXIE, due to the use of small inline datasets.
