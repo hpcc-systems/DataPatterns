@@ -31,6 +31,7 @@ level, such as within your "My Files" folder.
 |Version|Notes|
 |:----:|:-----|
 |1.0.0|Initial public release, finally with support for datasets defined using dynamic record lookup|
+|1.0.1|Add `ProfileFromPath` and `BestRecordStructureFromPath`; ave\_length bug fix|
 
 
 ### Profile
