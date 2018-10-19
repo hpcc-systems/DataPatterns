@@ -786,7 +786,7 @@ EXPORT Profile(inFile,
                 attribute,
                 UNSIGNED4   min_length := MIN(GROUP, data_length),
                 UNSIGNED4   max_length := MAX(GROUP, data_length),
-                UNSIGNED4   ave_length := AVE(GROUP, data_length)
+                UNSIGNED4   ave_length := SUM(GROUP, data_length * value_count) / SUM(GROUP, value_count)
             },
             attribute,
             MERGE
