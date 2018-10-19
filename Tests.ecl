@@ -3,16 +3,7 @@ IMPORT Std;
 
 EXPORT Tests := MODULE
 
-    EXPORT Engine_Test := OUTPUT
-        (
-            IF
-                (
-                    Std.System.Job.Platform() IN ['hthor', 'roxie'],
-                    Std.System.Job.Platform(),
-                    ERROR('This code must be run on hthor or roxie')
-                ),
-            NAMED('Execution_Engine')
-        );
+    EXPORT Engine_Test := OUTPUT(Std.System.Job.Platform(), NAMED('Execution_Engine'));
 
     //--------------------------------------------------------------------------
     // Useful functions
@@ -34,7 +25,7 @@ EXPORT Tests := MODULE
             {STRING s}
         );
 
-    SHARED Basic_String_Profile := DataPatterns.Profile(Basic_String);
+    SHARED Basic_String_Profile := DataPatterns.Profile(NOFOLD(Basic_String));
 
     EXPORT Test_Basic_String_Profile :=
         [
@@ -85,7 +76,7 @@ EXPORT Tests := MODULE
             {INTEGER n}
         );
 
-    SHARED Basic_Numeric_Profile := DataPatterns.Profile(Basic_Numeric);
+    SHARED Basic_Numeric_Profile := DataPatterns.Profile(NOFOLD(Basic_Numeric));
 
     EXPORT Test_Basic_Numeric_Profile :=
         [
@@ -181,7 +172,7 @@ EXPORT Tests := MODULE
                 )
         );
 
-    SHARED Empty_Data_Profile := DataPatterns.Profile(Empty_Data, features := 'cardinality,best_ecl_types,lengths,modes,patterns');
+    SHARED Empty_Data_Profile := DataPatterns.Profile(NOFOLD(Empty_Data), features := 'cardinality,best_ecl_types,lengths,modes,patterns');
 
     // Convenience function for testing the same thing for several attributes
     SHARED TestEmptyAttr(STRING attributeName) :=
@@ -268,7 +259,7 @@ EXPORT Tests := MODULE
             {UNICODE_de5 s}
         );
 
-    SHARED Pattern_Unicode_Profile := DataPatterns.Profile(Pattern_Unicode, features := 'patterns');
+    SHARED Pattern_Unicode_Profile := DataPatterns.Profile(NOFOLD(Pattern_Unicode), features := 'patterns');
 
     EXPORT Test_Pattern_Unicode_Profile :=
         [
@@ -293,7 +284,7 @@ EXPORT Tests := MODULE
             {STRING s}
         );
 
-    SHARED Pattern_Punctuation_Profile := DataPatterns.Profile(Pattern_Punctuation, features := 'patterns');
+    SHARED Pattern_Punctuation_Profile := DataPatterns.Profile(NOFOLD(Pattern_Punctuation), features := 'patterns');
 
     EXPORT Test_Pattern_Punctuation_Profile :=
         [
@@ -317,7 +308,7 @@ EXPORT Tests := MODULE
             {STRING s1, STRING s2, STRING s3, STRING s4, STRING s5}
         );
 
-    SHARED Best_Integer_Profile := DataPatterns.Profile(Best_Integer, features := 'best_ecl_types');
+    SHARED Best_Integer_Profile := DataPatterns.Profile(NOFOLD(Best_Integer), features := 'best_ecl_types');
 
     EXPORT Test_Best_Integer_Profile :=
         [
@@ -341,7 +332,7 @@ EXPORT Tests := MODULE
             {STRING s1, STRING s2, STRING s3, STRING s4, STRING s5}
         );
 
-    SHARED Best_Unsigned_Profile := DataPatterns.Profile(Best_Unsigned, features := 'best_ecl_types');
+    SHARED Best_Unsigned_Profile := DataPatterns.Profile(NOFOLD(Best_Unsigned), features := 'best_ecl_types');
 
     EXPORT Test_Best_Unsigned_Profile :=
         [
@@ -365,7 +356,7 @@ EXPORT Tests := MODULE
             {STRING s1, STRING s2, STRING s3, STRING s4, STRING s5}
         );
 
-    SHARED Best_Real_Profile := DataPatterns.Profile(Best_Real, features := 'best_ecl_types');
+    SHARED Best_Real_Profile := DataPatterns.Profile(NOFOLD(Best_Real), features := 'best_ecl_types');
 
     EXPORT Test_Best_Real_Profile :=
         [
@@ -389,7 +380,7 @@ EXPORT Tests := MODULE
             {STRING s1, STRING s2, STRING s3, STRING s4, STRING s5}
         );
 
-    SHARED Best_NaN_Profile := DataPatterns.Profile(Best_NaN, features := 'best_ecl_types');
+    SHARED Best_NaN_Profile := DataPatterns.Profile(NOFOLD(Best_NaN), features := 'best_ecl_types');
 
     EXPORT Test_Best_NaN_Profile :=
         [
