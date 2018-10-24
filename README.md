@@ -225,7 +225,8 @@ Here is a very simple example of executing the full data profiling code:
 
 ### ProfileFromPath
 
-You can also profile a logical file by knowing only its path:
+You can also profile a logical file by knowing only its path.  Note that this
+requires HPCC Systems version 6.4.0 or later.
 
     IMPORT DataPatterns;
 
@@ -279,8 +280,9 @@ attributes in the given dataset, the result will be truncated.
 
 ### BestRecordStructureFromPath
 
-Similar to `ProfileFromPath`, you can obtain the best ECL record structure for
-a logical file given only its path:
+Similar to `ProfileFromPath`, you can obtain the best ECL record structure for a
+logical file given only its path.  Note that this requires HPCC Systems version
+6.4.0 or later.
 
     IMPORT DataPatterns;
 
