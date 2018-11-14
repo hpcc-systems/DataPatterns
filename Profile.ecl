@@ -901,7 +901,7 @@ EXPORT Profile(inFile,
     END;
 
     LOCAL CorrelationRec := RECORD
-        Attribute_t                 attribute;
+        STRING                      attribute;
         DECIMAL7_6                  corr;
     END;
 
