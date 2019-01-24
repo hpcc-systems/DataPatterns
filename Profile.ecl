@@ -24,6 +24,11 @@
  *                              holding data blobs
  *      cardinality             The number of unique, non-nil values within
  *                              the attribute
+ *      cardinality_breakdown   For those attributes with a low number of
+ *                              unique, non-nil values, show each value and the
+ *                              number of records containing that value; the
+ *                              lcbLimit parameter governs what "low number"
+ *                              means
  *      modes                   The most common values in the attribute, after
  *                              coercing all values to STRING, along with the
  *                              number of records in which the values were
@@ -138,31 +143,35 @@
  *                          elements to be included in the output; OPTIONAL,
  *                          defaults to a comma-delimited string containing all
  *                          of the available keywords:
- *                              KEYWORD         AFFECTED OUTPUT
- *                              fill_rate       fill_rate
- *                                              fill_count
- *                              cardinality     cardinality
- *                              best_ecl_types  best_attribute_type
- *                              modes           modes
- *                              lengths         min_length
- *                                              max_length
- *                                              ave_length
- *                              patterns        popular_patterns
- *                                              rare_patterns
- *                              min_max         numeric_min
- *                                              numeric_max
- *                              mean            numeric_mean
- *                              std_dev         numeric_std_dev
- *                              quartiles       numeric_lower_quartile
- *                                              numeric_median
- *                                              numeric_upper_quartile
- *                              correlations    numeric_correlations
+ *                              KEYWORD                 AFFECTED OUTPUT
+ *                              fill_rate               fill_rate
+ *                                                      fill_count
+ *                              cardinality             cardinality
+ *                              cardinality_breakdown   cardinality_breakdown
+ *                              best_ecl_types          best_attribute_type
+ *                              modes                   modes
+ *                              lengths                 min_length
+ *                                                      max_length
+ *                                                      ave_length
+ *                              patterns                popular_patterns
+ *                                                      rare_patterns
+ *                              min_max                 numeric_min
+ *                                                      numeric_max
+ *                              mean                    numeric_mean
+ *                              std_dev                 numeric_std_dev
+ *                              quartiles               numeric_lower_quartile
+ *                                                      numeric_median
+ *                                                      numeric_upper_quartile
+ *                              correlations            numeric_correlations
  *                          To omit the output associated with a single keyword,
  *                          set this argument to a comma-delimited string
  *                          containing all other keywords; note that the
  *                          is_numeric output will appear only if min_max,
  *                          mean, std_dev, quartiles, or correlations features
- *                          are active
+ *                          are active; also note that enabling the
+ *                          cardinality_breakdown feature will also enable
+ *                          the cardinality feature, even if it is not
+ *                          explicitly enabled
  * @param   sampleSize      A positive integer representing a percentage of
  *                          inFile to examine, which is useful when analyzing a
  *                          very large dataset and only an estimated data
@@ -170,13 +179,20 @@
  *                          argument is 1-100; values outside of this range
  *                          will be clamped; OPTIONAL, defaults to 100 (which
  *                          indicates that the entire dataset will be analyzed)
+ * @param   lcbLimit        A positive integer (<= 500) indicating the maximum
+ *                          cardinality allowed for an attribute in order to
+ *                          emit a breakdown of the attribute's values; this
+ *                          parameter will be ignored if cardinality_breakdown
+ *                          is not included in the features argument; OPTIONAL,
+ *                          defaults to 64
  */
 EXPORT Profile(inFile,
                fieldListStr = '\'\'',
                maxPatterns = 100,
                maxPatternLen = 100,
-               features = '\'fill_rate,best_ecl_types,cardinality,modes,lengths,patterns,min_max,mean,std_dev,quartiles,correlations\'',
-               sampleSize = 100) := FUNCTIONMACRO
+               features = '\'fill_rate,best_ecl_types,cardinality,cardinality_breakdown,modes,lengths,patterns,min_max,mean,std_dev,quartiles,correlations\'',
+               sampleSize = 100,
+               lcbLimit = 64) := FUNCTIONMACRO
     LOADXML('<xml/>');
     #EXPORTXML(inFileFields, RECORDOF(inFile));
     #UNIQUENAME(recLevel);                          // Will be used to ensure we are processing only the top level of the dataset
@@ -184,10 +200,8 @@ EXPORT Profile(inFile,
     #UNIQUENAME(needsDelim2);                       // Another boolean indicating whether we need to insert a delimiter somewhere
     #UNIQUENAME(attributeSize);                     // Will become the length of the longest attribute name we will be processing
     #SET(attributeSize, 0);
-    #UNIQUENAME(minMaxPatternLen);                  // The minimum length of a data pattern
-    #SET(minMaxPatternLen, 33);
     #UNIQUENAME(foundMaxPatternLen);                // Will become the length of the longest pattern we will be processing
-    #SET(foundMaxPatternLen, %minMaxPatternLen%);   // Minimum length for an attribute pattern
+    #SET(foundMaxPatternLen, 33);                   // Preset to minimum length for an attribute pattern
     #UNIQUENAME(explicitFields);                    // Attributes from fieldListStr that are found in the top level of the dataset
     #SET(explicitFields, '');
     #UNIQUENAME(numericFields);                     // Numeric attributes from fieldListStr that are found in the top level of the dataset
@@ -200,6 +214,8 @@ EXPORT Profile(inFile,
     LOCAL trimmedFeatures := TRIM(features, ALL);
     // The maximum number of mode values to return
     LOCAL MAX_MODES := 5;
+    // Clamp lcbLimit to 0..500
+    LOCAL lowCardinalityThreshold := MIN(MAX(lcbLimit, 0), 500);
 
     // Validate that attribute is okay for us to process (not a SET OF XXX
     // data type, and that either there is no explicit attribute list or the
@@ -223,7 +239,8 @@ EXPORT Profile(inFile,
     // Tests for enabled features
     LOCAL FeatureEnabledFillRate() := REGEXFIND('\\bfill_rate\\b', trimmedFeatures, NOCASE);
     LOCAL FeatureEnabledBestECLTypes() := REGEXFIND('\\bbest_ecl_types\\b', trimmedFeatures, NOCASE);
-    LOCAL FeatureEnabledCardinality() := REGEXFIND('\\bcardinality\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledLowCardinalityBreakdown() := lowCardinalityThreshold > 0 AND REGEXFIND('\\bcardinality_breakdown\\b', trimmedFeatures, NOCASE);
+    LOCAL FeatureEnabledCardinality() := FeatureEnabledLowCardinalityBreakdown() OR REGEXFIND('\\bcardinality\\b', trimmedFeatures, NOCASE);
     LOCAL FeatureEnabledModes() := REGEXFIND('\\bmodes\\b', trimmedFeatures, NOCASE);
     LOCAL FeatureEnabledLengths() := REGEXFIND('\\blengths\\b', trimmedFeatures, NOCASE);
     LOCAL FeatureEnabledPatterns() := REGEXFIND('\\bpatterns\\b', trimmedFeatures, NOCASE);
@@ -681,6 +698,23 @@ EXPORT Profile(inFile,
                                 ),
                             SMART
                         ) : ONWARNING(4531, IGNORE);
+                    
+                    // Get records with low cardinality
+                    LOCAL #EXPAND(%'@name'% + '_lcb_recs') := IF
+                        (
+                            COUNT(#EXPAND(%'@name'% + '_uniq_value_recs')) <= lowCardinalityThreshold,
+                            PROJECT
+                                (
+                                    SORT(#EXPAND(%'@name'% + '_uniq_value_recs'), -rec_count),
+                                    TRANSFORM
+                                        (
+                                            ModeRec,
+                                            SELF.value := LEFT.string_value,
+                                            SELF.rec_count := LEFT.rec_count
+                                        )
+                                ),
+                            DATASET([], ModeRec)
+                        );
                 #END
             #END
         #END
@@ -863,7 +897,12 @@ EXPORT Profile(inFile,
                                         0,
                                     #END
                                     #IF(FeatureEnabledModes())
-                                        #EXPAND(%'@name'% + '_mode_values')(rec_count > 1) // Modes must have more than one instance
+                                        #EXPAND(%'@name'% + '_mode_values')(rec_count > 1), // Modes must have more than one instance
+                                    #ELSE
+                                        DATASET([], ModeRec),
+                                    #END
+                                    #IF(FeatureEnabledLowCardinalityBreakdown())
+                                        #EXPAND(%'@name'% + '_lcb_recs')
                                     #ELSE
                                         DATASET([], ModeRec)
                                     #END
@@ -887,6 +926,7 @@ EXPORT Profile(inFile,
                 REAL                numeric_median,
                 REAL                numeric_upper_quartile,
                 DATASET(ModeRec)    modes {MAXCOUNT(MAX_MODES)};
+                DATASET(ModeRec)    cardinality_breakdown;
             }
         );
 
@@ -912,6 +952,7 @@ EXPORT Profile(inFile,
         DECIMAL9_6                  fill_rate;
         UNSIGNED4                   fill_count;
         UNSIGNED4                   cardinality;
+        DATASET(ModeRec)            cardinality_breakdown;
         STRING                      best_attribute_type;
         DATASET(ModeRec)            modes {MAXCOUNT(MAX_MODES)};
         UNSIGNED4                   min_length;
@@ -985,7 +1026,7 @@ EXPORT Profile(inFile,
         #END;
 
     LOCAL final30 :=
-        #IF(FeatureEnabledCardinality() OR FeatureEnabledMinMax() OR FeatureEnabledMean() OR FeatureEnabledStdDev() OR FeatureEnabledQuartiles() OR FeatureEnabledModes())
+        #IF(FeatureEnabledCardinality() OR FeatureEnabledLowCardinalityBreakdown() OR FeatureEnabledMinMax() OR FeatureEnabledMean() OR FeatureEnabledStdDev() OR FeatureEnabledQuartiles() OR FeatureEnabledModes())
             JOIN
                 (
                     final20,
@@ -1126,6 +1167,9 @@ EXPORT Profile(inFile,
         #END
         #IF(FeatureEnabledCardinality())
             UNSIGNED4                   cardinality;
+        #END
+        #IF(FeatureEnabledLowCardinalityBreakdown())
+            DATASET(ModeRec)            cardinality_breakdown;
         #END
         #IF(FeatureEnabledModes())
             DATASET(ModeRec)            modes {MAXCOUNT(MAX_MODES)};
