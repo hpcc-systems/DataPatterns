@@ -32,31 +32,35 @@
  *                          elements to be included in the output; OPTIONAL,
  *                          defaults to a comma-delimited string containing all
  *                          of the available keywords:
- *                              KEYWORD         AFFECTED OUTPUT
- *                              fill_rate       fill_rate
- *                                              fill_count
- *                              cardinality     cardinality
- *                              best_ecl_types  best_attribute_type
- *                              modes           modes
- *                              lengths         min_length
- *                                              max_length
- *                                              ave_length
- *                              patterns        popular_patterns
- *                                              rare_patterns
- *                              min_max         numeric_min
- *                                              numeric_max
- *                              mean            numeric_mean
- *                              std_dev         numeric_std_dev
- *                              quartiles       numeric_lower_quartile
- *                                              numeric_median
- *                                              numeric_upper_quartile
- *                              correlations    numeric_correlations
+ *                              KEYWORD                 AFFECTED OUTPUT
+ *                              fill_rate               fill_rate
+ *                                                      fill_count
+ *                              cardinality             cardinality
+ *                              cardinality_breakdown   cardinality_breakdown
+ *                              best_ecl_types          best_attribute_type
+ *                              modes                   modes
+ *                              lengths                 min_length
+ *                                                      max_length
+ *                                                      ave_length
+ *                              patterns                popular_patterns
+ *                                                      rare_patterns
+ *                              min_max                 numeric_min
+ *                                                      numeric_max
+ *                              mean                    numeric_mean
+ *                              std_dev                 numeric_std_dev
+ *                              quartiles               numeric_lower_quartile
+ *                                                      numeric_median
+ *                                                      numeric_upper_quartile
+ *                              correlations            numeric_correlations
  *                          To omit the output associated with a single keyword,
  *                          set this argument to a comma-delimited string
  *                          containing all other keywords; note that the
  *                          is_numeric output will appear only if min_max,
  *                          mean, std_dev, quartiles, or correlations features
- *                          are active
+ *                          are active; also note that enabling the
+ *                          cardinality_breakdown feature will also enable
+ *                          the cardinality feature, even if it is not
+ *                          explicitly enabled
  * @param   sampleSize      A positive integer representing a percentage of
  *                          inFile to examine, which is useful when analyzing a
  *                          very large dataset and only an estimated data
@@ -64,12 +68,19 @@
  *                          argument is 1-100; values outside of this range
  *                          will be clamped; OPTIONAL, defaults to 100 (which
  *                          indicates that the entire dataset will be analyzed)
+ * @param   lcbLimit        A positive integer (<= 500) indicating the maximum
+ *                          cardinality allowed for an attribute in order to
+ *                          emit a breakdown of the attribute's values; this
+ *                          parameter will be ignored if cardinality_breakdown
+ *                          is not included in the features argument; OPTIONAL,
+ *                          defaults to 64
  */
 EXPORT ProfileFromPath(path,
                        maxPatterns = 100,
                        maxPatternLen = 100,
-                       features = '\'fill_rate,best_ecl_types,cardinality,modes,lengths,patterns,min_max,mean,std_dev,quartiles,correlations\'',
-                       sampleSize = 100) := FUNCTIONMACRO
+                       features = '\'fill_rate,best_ecl_types,cardinality,cardinality_breakdown,modes,lengths,patterns,min_max,mean,std_dev,quartiles,correlations\'',
+                       sampleSize = 100,
+                       lcbLimit = 64) := FUNCTIONMACRO
     IMPORT DataPatterns;
     IMPORT Std;
 
@@ -100,21 +111,33 @@ EXPORT ProfileFromPath(path,
             FLAT
         );
 
-    // The returned value needs to be in a common format; dynamically determine
-    // the record structure of the Profile result so it can be used to coerce
-    // the individual Profile calls (and to provide an empty dataset in case
-    // of an error)
-    LOCAL CommonResultRec := RECORDOF(DataPatterns.Profile(DATASET([], {STRING s})));
-
-    LOCAL RunProfile(tempFile, _maxPatterns, _maxPatternLen, _features, _sampleSize) := FUNCTIONMACRO
-        LOCAL theProfile := DataPatterns.Profile
+    // Function macro to properly scope execution of Profile()
+    LOCAL RunProfile(tempFile, _maxPatterns, _maxPatternLen, _features, _sampleSize, _lcb) := FUNCTIONMACRO
+        RETURN DataPatterns.Profile
             (
                 tempFile,
                 maxPatterns := _maxPatterns,
                 maxPatternLen := _maxPatternLen,
                 features := _features,
-                sampleSize := _sampleSize
+                sampleSize := _sampleSize,
+                lcbLimit := _lcb
             );
+    ENDMACRO;
+
+    // The returned value needs to be in a common format; dynamically determine
+    // the record structure of the Profile result so it can be used to coerce
+    // the individual Profile calls (and to provide an empty dataset in case
+    // of an error)
+    LOCAL CommonResultRec := RECORDOF
+        (
+            RunProfile(DATASET([], {STRING s}), maxPatterns, maxPatternLen, features, sampleSize, lcbLimit)
+        );
+
+    // This is really a do-nothing routine, as the results of the RunProfile()
+    // call will be in the appropriate format, but doing it this way keeps
+    // the ECL compiler happy
+    LOCAL RunProfileAndCoerce(tempFile, _maxPatterns, _maxPatternLen, _features, _sampleSize, _lcb) := FUNCTIONMACRO
+        LOCAL theProfile := RunProfile(tempFile, _maxPatterns, _maxPatternLen, _features, _sampleSize, _lcb);
 
         RETURN PROJECT
             (
@@ -130,8 +153,8 @@ EXPORT ProfileFromPath(path,
     LOCAL resultProfile := CASE
         (
             fileKind,
-            'flat'  =>  RunProfile(flatDataset, maxPatterns, maxPatternLen, features, sampleSize),
-            'csv'   =>  RunProfile(csvDataset, maxPatterns, maxPatternLen, features, sampleSize),
+            'flat'  =>  RunProfileAndCoerce(flatDataset, maxPatterns, maxPatternLen, features, sampleSize, lcbLimit),
+            'csv'   =>  RunProfileAndCoerce(csvDataset, maxPatterns, maxPatternLen, features, sampleSize, lcbLimit),
             ERROR(DATASET([], CommonResultRec), 'Cannot run Profile on file of kind "' + fileKind + '"')
         );
 

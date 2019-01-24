@@ -33,6 +33,7 @@ level, such as within your "My Files" folder.
 |1.0.0|Initial public release, finally with support for datasets defined using dynamic record lookup|
 |1.0.1|Add `ProfileFromPath` and `BestRecordStructureFromPath`; ave\_length bug fix|
 |1.0.2|Change attribute field in CorrelationsRec embedded dataset to STRING|
+|1.1.0|Add record count breakdown for low-cardinality field values; ProfileFromPath() returns correct record structure|
 
 
 ### Profile
@@ -65,6 +66,11 @@ Documentation as pulled from the beginning of Profile.ecl:
                                  holding data blobs
          cardinality             The number of unique, non-nil values within
                                  the attribute
+         cardinality_breakdown   For those attributes with a low number of
+                                 unique, non-nil values, show each value and the
+                                 number of records containing that value; the
+                                 lcbLimit parameter governs what "low number"
+                                 means
          modes                   The most common values in the attribute, after
                                  coercing all values to STRING, along with the
                                  number of records in which the values were
@@ -179,31 +185,35 @@ Documentation as pulled from the beginning of Profile.ecl:
                              elements to be included in the output; OPTIONAL,
                              defaults to a comma-delimited string containing all
                              of the available keywords:
-                                 KEYWORD         AFFECTED OUTPUT
-                                 fill_rate       fill_rate
-                                                 fill_count
-                                 cardinality     cardinality
-                                 best_ecl_types  best_attribute_type
-                                 modes           modes
-                                 lengths         min_length
-                                                 max_length
-                                                 ave_length
-                                 patterns        popular_patterns
-                                                 rare_patterns
-                                 min_max         numeric_min
-                                                 numeric_max
-                                 mean            numeric_mean
-                                 std_dev         numeric_std_dev
-                                 quartiles       numeric_lower_quartile
-                                                 numeric_median
-                                                 numeric_upper_quartile
-                                 correlations    numeric_correlations
+                                 KEYWORD                 AFFECTED OUTPUT
+                                 fill_rate               fill_rate
+                                                         fill_count
+                                 cardinality             cardinality
+                                 cardinality_breakdown   cardinality_breakdown
+                                 best_ecl_types          best_attribute_type
+                                 modes                   modes
+                                 lengths                 min_length
+                                                         max_length
+                                                         ave_length
+                                 patterns                popular_patterns
+                                                         rare_patterns
+                                 min_max                 numeric_min
+                                                         numeric_max
+                                 mean                    numeric_mean
+                                 std_dev                 numeric_std_dev
+                                 quartiles               numeric_lower_quartile
+                                                         numeric_median
+                                                         numeric_upper_quartile
+                                 correlations            numeric_correlations
                              To omit the output associated with a single keyword,
                              set this argument to a comma-delimited string
                              containing all other keywords; note that the
                              is_numeric output will appear only if min_max,
                              mean, std_dev, quartiles, or correlations features
-                             are active
+                             are active; also note that enabling the
+                             cardinality_breakdown feature will also enable
+                             the cardinality feature, even if it is not
+                             explicitly enabled
     @param   sampleSize      A positive integer representing a percentage of
                              inFile to examine, which is useful when analyzing a
                              very large dataset and only an estimated data
@@ -211,6 +221,12 @@ Documentation as pulled from the beginning of Profile.ecl:
                              argument is 1-100; values outside of this range
                              will be clamped; OPTIONAL, defaults to 100 (which
                              indicates that the entire dataset will be analyzed)
+    @param   lcbLimit        A positive integer (<= 500) indicating the maximum
+                             cardinality allowed for an attribute in order to
+                             emit a breakdown of the attribute's values; this
+                             parameter will be ignored if cardinality_breakdown
+                             is not included in the features argument; OPTIONAL,
+                             defaults to 64
 
 Here is a very simple example of executing the full data profiling code:
 
