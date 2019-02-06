@@ -34,6 +34,7 @@ level, such as within your "My Files" folder.
 |1.0.1|Add `ProfileFromPath` and `BestRecordStructureFromPath`; ave\_length bug fix|
 |1.0.2|Change attribute field in CorrelationsRec embedded dataset to STRING|
 |1.1.0|Add record count breakdown for low-cardinality field values; ProfileFromPath() returns correct record structure|
+|1.1.1|Examine UTF8 values for alternate best\_attribute\_type data types rather than just passing them through|
 
 
 ### Profile
