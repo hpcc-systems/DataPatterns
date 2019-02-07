@@ -85,13 +85,12 @@ EXPORT BestRecordStructureFromPath(path, sampling = 100, emitTransform = FALSE) 
             );
     ENDMACRO;
 
-    fileKind2 := WHEN(fileKind, OUTPUT(fileKind, NAMED('fileKind')));
-
     LOCAL resultStructure := CASE
         (
-            fileKind2,
+            TRIM(fileKind, ALL),
             'flat'  =>  RunBestRecordStructure(flatDataset, sampling, emitTransform),
             'csv'   =>  RunBestRecordStructure(csvDataset, sampling, emitTransform),
+            ''      =>  RunBestRecordStructure(csvDataset, sampling, emitTransform),
             ERROR(DATASET([], CommonResultRec), 'Cannot run BestRecordStructure on file of kind "' + fileKind + '"')
         );
 
