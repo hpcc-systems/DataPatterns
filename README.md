@@ -36,6 +36,7 @@ level, such as within your "My Files" folder.
 |1.1.0|Add record count breakdown for low-cardinality field values; ProfileFromPath() returns correct record structure|
 |1.1.1|Examine UTF8 values for alternate best\_attribute\_type data types rather than just passing them through|
 |1.2.0|Add option to emit a suitable TRANSFORM function to BestRecordStructure and BestRecordStructureFromPath|
+|1.2.1|Just-sprayed CSV files now supported within BestRecordStructureFromPath|
 
 
 ### Profile
