@@ -35,6 +35,7 @@ level, such as within your "My Files" folder.
 |1.0.2|Change attribute field in CorrelationsRec embedded dataset to STRING|
 |1.1.0|Add record count breakdown for low-cardinality field values; ProfileFromPath() returns correct record structure|
 |1.1.1|Examine UTF8 values for alternate best\_attribute\_type data types rather than just passing them through|
+|1.2.0|Add option to emit a suitable TRANSFORM function to BestRecordStructure and BestRecordStructureFromPath|
 
 
 ### Profile
@@ -310,7 +311,11 @@ logical file given only its path.  Note that this requires HPCC Systems version
 
     OUTPUT(recordDefinition, NAMED('recordDefinition'), ALL);
 
-`BestRecordStructureFromPath` accepts the same arguments as
+This function can also emit a TRANSFORM function that provides explicit type
+casting where necessary, such as casting a STRING to an UNSIGNED.  See the
+comments within the function for details.
+
+`BestRecordStructureFromPath` accepts the same optional arguments as
 `BestRecordStructure`.
 
 ### Testing
