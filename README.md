@@ -37,6 +37,7 @@ level, such as within your "My Files" folder.
 |1.1.1|Examine UTF8 values for alternate best\_attribute\_type data types rather than just passing them through|
 |1.2.0|Add option to emit a suitable TRANSFORM function to BestRecordStructure and BestRecordStructureFromPath|
 |1.2.1|Just-sprayed CSV files now supported within BestRecordStructureFromPath|
+|1.2.2|Bug fix: Support datasets that contain reserved words as field names (e.g. loop)|
 
 
 ### Profile
