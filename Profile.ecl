@@ -395,54 +395,54 @@ EXPORT Profile(inFile,
                                             AttributeType_t given_attribute_type := %'@ecltype'%,
                                             StringValue_t   string_value :=
                                                                 #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', %'@type'%))
-                                                                    (StringValue_t)%@name%
+                                                                    (StringValue_t)distributedInFile.%@name%
                                                                 #ELSEIF(REGEXFIND('string', %'@type'%))
-                                                                    TrimmedStr(%@name%)
+                                                                    TrimmedStr(distributedInFile.%@name%)
                                                                 #ELSE
-                                                                    TrimmedStr((StringValue_t)%@name%)
+                                                                    TrimmedStr((StringValue_t)distributedInFile.%@name%)
                                                                 #END,
                                             UNSIGNED4       value_count := COUNT(GROUP),
                                             DataPattern_t   data_pattern :=
                                                                 #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
-                                                                    MapAllStr((STRING)%@name%)
+                                                                    MapAllStr((STRING)distributedInFile.%@name%)
                                                                 #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
                                                                     #IF(%@size% < 0 OR (%@size% DIV 2 + 1) > %foundMaxPatternLen%)
-                                                                        MapAllUni(TrimmedUni((UNICODE)%@name%)[..%foundMaxPatternLen%])
+                                                                        MapAllUni(TrimmedUni((UNICODE)distributedInFile.%@name%)[..%foundMaxPatternLen%])
                                                                     #ELSE
-                                                                        MapAllUni(TrimmedUni((UNICODE)%@name%))
+                                                                        MapAllUni(TrimmedUni((UNICODE)distributedInFile.%@name%))
                                                                     #END
                                                                 #ELSEIF(REGEXFIND('string', %'@type'%))
                                                                     #IF(%@size% < 0 OR %@size% > %foundMaxPatternLen%)
-                                                                        MapAllStr(TrimmedStr(%@name%)[..%foundMaxPatternLen%])
+                                                                        MapAllStr(TrimmedStr(distributedInFile.%@name%)[..%foundMaxPatternLen%])
                                                                     #ELSE
-                                                                        MapAllStr(TrimmedStr(%@name%))
+                                                                        MapAllStr(TrimmedStr(distributedInFile.%@name%))
                                                                     #END
                                                                 #ELSEIF(%'@type'% = 'boolean')
                                                                     'B'
                                                                 #ELSE
-                                                                    MapAllStr(TrimmedStr((STRING)%@name%)[..%foundMaxPatternLen%])
+                                                                    MapAllStr(TrimmedStr((STRING)distributedInFile.%@name%)[..%foundMaxPatternLen%])
                                                                 #END,
                                             UNSIGNED4       data_length :=
                                                                 #IF(REGEXFIND('(unicode)|(utf)', %'@type'%))
-                                                                    LENGTH(TrimmedUni((UNICODE)%@name%))
+                                                                    LENGTH(TrimmedUni((UNICODE)distributedInFile.%@name%))
                                                                 #ELSEIF(REGEXFIND('string', %'@type'%))
-                                                                    LENGTH(TrimmedStr(%@name%))
+                                                                    LENGTH(TrimmedStr(distributedInFile.%@name%))
                                                                 #ELSEIF(%'@type'% = 'boolean')
                                                                     1
                                                                 #ELSE
-                                                                    LENGTH((STRING)%@name%)
+                                                                    LENGTH((STRING)distributedInFile.%@name%)
                                                                 #END,
                                             BOOLEAN         is_filled :=
                                                                 #IF(REGEXFIND('(unicode)|(utf)', %'@type'%))
-                                                                    LENGTH(TrimmedUni(%@name%)) > 0
+                                                                    LENGTH(TrimmedUni(distributedInFile.%@name%)) > 0
                                                                 #ELSEIF(REGEXFIND('string', %'@type'%))
-                                                                    LENGTH(TrimmedStr(%@name%)) > 0
+                                                                    LENGTH(TrimmedStr(distributedInFile.%@name%)) > 0
                                                                 #ELSEIF(REGEXFIND('data', %'@type'%))
-                                                                    LENGTH(%@name%) > 0
+                                                                    LENGTH(distributedInFile.%@name%) > 0
                                                                 #ELSEIF(%'@type'% = 'boolean')
                                                                     TRUE
                                                                 #ELSE
-                                                                    %@name% != 0
+                                                                    distributedInFile.%@name% != 0
                                                                 #END,
                                             BOOLEAN         is_number :=
                                                                 #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
@@ -451,7 +451,7 @@ EXPORT Profile(inFile,
                                                                     FALSE
                                                                 #END
                                         },
-                                        %@name%,
+                                        distributedInFile.%@name%,
                                         LOCAL
                                     ),
                                     TRANSFORM(DataInfoRec, SELF := LEFT)
