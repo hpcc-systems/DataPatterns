@@ -391,4 +391,87 @@ EXPORT Tests := MODULE
             ASSERT(ValueForAttr(Best_NaN_Profile, 's5', best_attribute_type) = 'string23'),
             ASSERT(TRUE)
         ];
+
+    //--------------------------------------------------------------------------
+    // Embedded child record test
+    //--------------------------------------------------------------------------
+
+    SHARED Embedded_Child1 := DATASET
+        (
+            [
+                {'Dan', {123, 345, 567}},
+                {'Mike', {987, 765, 543}}
+            ],
+            {STRING s, {UNSIGNED4 x, UNSIGNED4 y, UNSIGNED4 z} foo}
+        );
+
+    SHARED Embedded_Child1_Profile := DataPatterns.Profile(NOFOLD(Embedded_Child1));
+
+    EXPORT Test_Embedded_Child1_Profile :=
+        [
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].attribute = 'foo.x'),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].rec_count = 2),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].given_attribute_type = 'unsigned4'),
+            ASSERT((DECIMAL9_6)Embedded_Child1_Profile(attribute = 'foo.x')[1].fill_rate = (DECIMAL9_6)100),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].fill_count = 2),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].cardinality = 2),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].best_attribute_type = 'unsigned2'),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].min_length = 3),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].max_length = 3),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].ave_length = 3),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.x')[1].popular_patterns) = 1),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.x')[1].rare_patterns) = 0),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].is_numeric = TRUE),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_min = 123),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_max = 987),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_mean = 555),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_std_dev = 432),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_lower_quartile = 123),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_median = 555),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_upper_quartile = 0),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_correlations) = 2),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].attribute = 'foo.y'),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].rec_count = 2),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].given_attribute_type = 'unsigned4'),
+            ASSERT((DECIMAL9_6)Embedded_Child1_Profile(attribute = 'foo.y')[1].fill_rate = (DECIMAL9_6)100),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].fill_count = 2),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].cardinality = 2),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].best_attribute_type = 'unsigned2'),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].min_length = 3),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].max_length = 3),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].ave_length = 3),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.y')[1].popular_patterns) = 1),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.y')[1].rare_patterns) = 0),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].is_numeric = TRUE),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_min = 345),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_max = 765),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_mean = 555),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_std_dev = 210),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_lower_quartile = 345),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_median = 555),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_upper_quartile = 0),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_correlations) = 2),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].attribute = 'foo.z'),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].rec_count = 2),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].given_attribute_type = 'unsigned4'),
+            ASSERT((DECIMAL9_6)Embedded_Child1_Profile(attribute = 'foo.z')[1].fill_rate = (DECIMAL9_6)100),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].fill_count = 2),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].cardinality = 2),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].best_attribute_type = 'unsigned2'),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].min_length = 3),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].max_length = 3),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].ave_length = 3),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.z')[1].popular_patterns) = 1),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.z')[1].rare_patterns) = 0),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].is_numeric = TRUE),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_min = 543),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_max = 567),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_mean = 555),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_std_dev = 12),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_lower_quartile = 543),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_median = 555),
+            ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_upper_quartile = 0),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_correlations) = 2),
+            ASSERT(TRUE)
+        ];
 END;

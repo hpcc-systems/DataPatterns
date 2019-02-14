@@ -26,15 +26,27 @@
  *                          TRANSFORM function that could be used to rewrite
  *                          the dataset into the 'best' record definition;
  *                          OPTIONAL, defaults to FALSE.
+ * @param   textOutput      Boolean governing the type of result that is
+ *                          delivered by this function; if FALSE then a
+ *                          recordset of STRINGs will be returned; if TRUE
+ *                          then a dataset with a single STRING field, with
+ *                          the contents formatted for HTML, will be
+ *                          returned (this is the ideal output if the
+ *                          intention is to copy the output from ECL Watch);
+ *                          OPTIONAL, defaults to FALSE
  *
  * @return  A recordset defining the best ECL record structure for the data.
- *          Each record will contain one field declaration, and the list of
- *          declarations will be wrapped with RECORD and END strings.  If the
- *          emitTransform argument was TRUE, there will also be a set of
- *          records that that comprise a stand-alone TRANSFORM function.  This
- *          format makes the result suitable for copying and pasting.
+ *          If textOutput is FALSE (the default) then each record will contain
+ *          one field declaration, and the list of declarations will be wrapped
+ *          with RECORD and END strings; if the emitTransform argument was
+ *          TRUE, there will also be a set of records that that comprise a
+ *          stand-alone TRANSFORM function.  If textOutput is TRUE then only
+ *          one record will be returned, containing an HTML-formatted string
+ *          containing the new field declarations (and optionally the
+ *          TRANSFORM); this is the ideal format if the intention is to copy
+ *          the result from ECL Watch.
  */
-EXPORT BestRecordStructureFromPath(path, sampling = 100, emitTransform = FALSE) := FUNCTIONMACRO
+EXPORT BestRecordStructureFromPath(path, sampling = 100, emitTransform = FALSE, textOutput = FALSE) := FUNCTIONMACRO
     IMPORT DataPatterns;
     IMPORT Std;
 
@@ -65,14 +77,17 @@ EXPORT BestRecordStructureFromPath(path, sampling = 100, emitTransform = FALSE) 
             FLAT
         );
 
-    // The returned value needs to be in a common format; dynamically determine
-    // the record structure of the BestRecordStructure result so it can be used
-    // to coerce the individual Profile calls (and to provide an empty dataset
-    // in case of an error)
-    LOCAL CommonResultRec := RECORDOF(DataPatterns.BestRecordStructure(DATASET([], {STRING s})));
+    // The returned value needs to be in a common format; the format here was
+    // extracted from the DataPatterns.BestRecordStructure code
+    LOCAL CommonResultRec :=
+        #IF((BOOLEAN)textOutput)
+            {STRING result__html}
+        #ELSE
+            {STRING s}
+        #END;
 
-    LOCAL RunBestRecordStructure(tempFile, _sampleSize, _emitTransform) := FUNCTIONMACRO
-        LOCAL theResult := DataPatterns.BestRecordStructure(tempFile, _sampleSize, _emitTransform);
+    LOCAL RunBestRecordStructure(tempFile, _sampleSize, _emitTransform, _textOutput) := FUNCTIONMACRO
+        LOCAL theResult := DataPatterns.BestRecordStructure(tempFile, _sampleSize, _emitTransform, _textOutput);
 
         RETURN PROJECT
             (
@@ -88,9 +103,9 @@ EXPORT BestRecordStructureFromPath(path, sampling = 100, emitTransform = FALSE) 
     LOCAL resultStructure := CASE
         (
             TRIM(fileKind, ALL),
-            'flat'  =>  RunBestRecordStructure(flatDataset, sampling, emitTransform),
-            'csv'   =>  RunBestRecordStructure(csvDataset, sampling, emitTransform),
-            ''      =>  RunBestRecordStructure(csvDataset, sampling, emitTransform),
+            'flat'  =>  RunBestRecordStructure(flatDataset, sampling, emitTransform, textOutput),
+            'csv'   =>  RunBestRecordStructure(csvDataset, sampling, emitTransform, textOutput),
+            ''      =>  RunBestRecordStructure(csvDataset, sampling, emitTransform, textOutput),
             ERROR(DATASET([], CommonResultRec), 'Cannot run BestRecordStructure on file of kind "' + fileKind + '"')
         );
 

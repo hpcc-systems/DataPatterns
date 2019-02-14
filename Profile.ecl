@@ -111,12 +111,9 @@
  *
  * All other characters are left as-is in the pattern.
  *
- * Only the top level attributes within a dataset are processed; embedded
- * records and child recordsets are skipped.  SET data types (such as
- * SET OF INTEGER) are also skipped.  If the dataset contains only
- * embedded records and/or child recordsets, or if fieldListStr is specified
- * but with attributes that don't actually exist in the top level (or are
- * invalid) then an error will be produced during compilation time.
+ * Child datasets and SET data types (such as SET OF INTEGER) are not
+ * supported.  If the input dataset cannot be processed then an error will be
+ * produced at compile time.
  *
  * This function works best when the incoming dataset contains attributes that
  * have precise data types (e.g. UNSIGNED4 data types instead of numbers
@@ -195,7 +192,10 @@ EXPORT Profile(inFile,
                lcbLimit = 64) := FUNCTIONMACRO
     LOADXML('<xml/>');
     #EXPORTXML(inFileFields, RECORDOF(inFile));
-    #UNIQUENAME(recLevel);                          // Will be used to ensure we are processing only the top level of the dataset
+    #UNIQUENAME(recLevel);                          // Will be used to determine at which level we are processing
+    #UNIQUENAME(fieldStack);                        // String-based stack telling us whether we're within an embedded dataset or record
+    #SET(fieldStack, '');
+    #UNIQUENAME(namePrefix);
     #UNIQUENAME(needsDelim);                        // Boolean indicating whether we need to insert a delimiter somewhere
     #UNIQUENAME(needsDelim2);                       // Another boolean indicating whether we need to insert a delimiter somewhere
     #UNIQUENAME(attributeSize);                     // Will become the length of the longest attribute name we will be processing
@@ -221,6 +221,10 @@ EXPORT Profile(inFile,
     // data type, and that either there is no explicit attribute list or the
     // name is in the list)
     LOCAL CanProcessAttribute(STRING attrName, STRING attrType) := (attrType[..7] != 'set of ' AND (trimmedFieldList = '' OR REGEXFIND('(^|,)' + attrName + '(,|$)', trimmedFieldList, NOCASE)));
+
+    // Helper function to convert a full field name into somthing we
+    // can reference as an ECL attribute
+    LOCAL MakeAttr(STRING attr) := REGEXREPLACE('\\.', attr, '_');
 
     // Useful functions for pattern mapping
     LOCAL MapUpperCharStr(STRING s) := REGEXREPLACE('[[:upper:]]', s, 'A');
@@ -260,22 +264,33 @@ EXPORT Profile(inFile,
     #SET(needsDelim, 0);
     #SET(needsDelim2, 0);
     #SET(recLevel, 0);
+    #SET(fieldStack, '');
+    #SET(namePrefix, '');
     #SET(fieldCount, 0);
     #FOR(inFileFields)
         #FOR(Field)
             #SET(fieldCount, %fieldCount% + 1);
-            #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
+            #IF(%{@isRecord}% = 1)
+                #SET(fieldStack, 'r' + %'fieldStack'%)
+                #APPEND(namePrefix, %'@name'% + '.')
+            #ELSEIF(%{@isDataset}% = 1)
+                #SET(fieldStack, 'd' + %'fieldStack'%)
                 #SET(recLevel, %recLevel% + 1)
             #ELSEIF(%{@isEnd}% = 1)
-                #SET(recLevel, %recLevel% - 1)
+                #IF(%'fieldStack'%[1] = 'd')
+                    #SET(recLevel, %recLevel% - 1)
+                #ELSE
+                    #SET(namePrefix, REGEXREPLACE('\\w+\\.$', %'namePrefix'%, ''))
+                #END
+                #SET(fieldStack, %'fieldStack'%[2..])
             #ELSEIF(%recLevel% = 0)
-                #IF(CanProcessAttribute(%'@name'%, %'@type'%))
-                    #SET(attributeSize, MAX(%attributeSize%, LENGTH(%'@name'%)))
+                #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%, %'@type'%))
+                    #SET(attributeSize, MAX(%attributeSize%, LENGTH(%'namePrefix'% + %'@name'%)))
 
                     #IF(%needsDelim% = 1)
                         #APPEND(explicitFields, ',')
                     #END
-                    #APPEND(explicitFields, %'@name'%)
+                    #APPEND(explicitFields, %'namePrefix'% + %'@name'%)
                     #SET(needsDelim, 1)
 
                     #IF(REGEXFIND('(string)|(data)|(utf)', %'@type'%))
@@ -295,14 +310,13 @@ EXPORT Profile(inFile,
                         #IF(%needsDelim2% = 1)
                             #APPEND(numericFields, ',')
                         #END
-                        #APPEND(numericFields, %'@name'%)
+                        #APPEND(numericFields, %'namePrefix'% + %'@name'%)
                         #SET(needsDelim2, 1)
                     #END
                 #END
             #END
         #END
     #END
-
     // Error check:  If attributeSize is still zero then we don't have any
     // attributes to process
     #IF(%fieldCount% > 0 AND %attributeSize% = 0)
@@ -372,17 +386,28 @@ EXPORT Profile(inFile,
 
     LOCAL dataInfo :=
         #SET(recLevel, 0)
+        #SET(fieldStack, '')
+        #SET(namePrefix, '')
         #SET(needsDelim, 0)
         #SET(fieldCount, 0)
         #FOR(inFileFields)
             #FOR(Field)
-                #SET(fieldCount, %fieldCount% + 1)
-                #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
+                #IF(%{@isRecord}% = 1)
+                    #SET(fieldStack, 'r' + %'fieldStack'%)
+                    #APPEND(namePrefix, %'@name'% + '.')
+                #ELSEIF(%{@isDataset}% = 1)
+                    #SET(fieldStack, 'd' + %'fieldStack'%)
                     #SET(recLevel, %recLevel% + 1)
                 #ELSEIF(%{@isEnd}% = 1)
-                    #SET(recLevel, %recLevel% - 1)
+                    #IF(%'fieldStack'%[1] = 'd')
+                        #SET(recLevel, %recLevel% - 1)
+                    #ELSE
+                        #SET(namePrefix, REGEXREPLACE('\\w+\\.$', %'namePrefix'%, ''))
+                    #END
+                    #SET(fieldStack, %'fieldStack'%[2..])
                 #ELSEIF(%recLevel% = 0)
-                    #IF(CanProcessAttribute(%'@name'%, %'@type'%))
+                    #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%, %'@type'%))
+                        #SET(fieldCount, %fieldCount% + 1)
                         #IF(%needsDelim% = 1) + #END
 
                         PROJECT
@@ -391,58 +416,58 @@ EXPORT Profile(inFile,
                                     (
                                         distributedInFile,
                                         {
-                                            Attribute_t     attribute := %'@name'%,
+                                            Attribute_t     attribute := %'namePrefix'% + %'@name'%,
                                             AttributeType_t given_attribute_type := %'@ecltype'%,
                                             StringValue_t   string_value :=
                                                                 #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', %'@type'%))
-                                                                    (StringValue_t)distributedInFile.%@name%
+                                                                    (StringValue_t)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%)
                                                                 #ELSEIF(REGEXFIND('string', %'@type'%))
-                                                                    TrimmedStr(distributedInFile.%@name%)
+                                                                    TrimmedStr(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))
                                                                 #ELSE
-                                                                    TrimmedStr((StringValue_t)distributedInFile.%@name%)
+                                                                    TrimmedStr((StringValue_t)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))
                                                                 #END,
                                             UNSIGNED4       value_count := COUNT(GROUP),
                                             DataPattern_t   data_pattern :=
                                                                 #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
-                                                                    MapAllStr((STRING)distributedInFile.%@name%)
+                                                                    MapAllStr((STRING)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))
                                                                 #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
                                                                     #IF(%@size% < 0 OR (%@size% DIV 2 + 1) > %foundMaxPatternLen%)
-                                                                        MapAllUni(TrimmedUni((UNICODE)distributedInFile.%@name%)[..%foundMaxPatternLen%])
+                                                                        MapAllUni(TrimmedUni((UNICODE)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
                                                                     #ELSE
-                                                                        MapAllUni(TrimmedUni((UNICODE)distributedInFile.%@name%))
+                                                                        MapAllUni(TrimmedUni((UNICODE)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%)))
                                                                     #END
                                                                 #ELSEIF(REGEXFIND('string', %'@type'%))
                                                                     #IF(%@size% < 0 OR %@size% > %foundMaxPatternLen%)
-                                                                        MapAllStr(TrimmedStr(distributedInFile.%@name%)[..%foundMaxPatternLen%])
+                                                                        MapAllStr(TrimmedStr(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
                                                                     #ELSE
-                                                                        MapAllStr(TrimmedStr(distributedInFile.%@name%))
+                                                                        MapAllStr(TrimmedStr(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%)))
                                                                     #END
                                                                 #ELSEIF(%'@type'% = 'boolean')
                                                                     'B'
                                                                 #ELSE
-                                                                    MapAllStr(TrimmedStr((STRING)distributedInFile.%@name%)[..%foundMaxPatternLen%])
+                                                                    MapAllStr(TrimmedStr((STRING)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
                                                                 #END,
                                             UNSIGNED4       data_length :=
                                                                 #IF(REGEXFIND('(unicode)|(utf)', %'@type'%))
-                                                                    LENGTH(TrimmedUni((UNICODE)distributedInFile.%@name%))
+                                                                    LENGTH(TrimmedUni((UNICODE)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%)))
                                                                 #ELSEIF(REGEXFIND('string', %'@type'%))
-                                                                    LENGTH(TrimmedStr(distributedInFile.%@name%))
+                                                                    LENGTH(TrimmedStr(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%)))
                                                                 #ELSEIF(%'@type'% = 'boolean')
                                                                     1
                                                                 #ELSE
-                                                                    LENGTH((STRING)distributedInFile.%@name%)
+                                                                    LENGTH((STRING)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))
                                                                 #END,
                                             BOOLEAN         is_filled :=
                                                                 #IF(REGEXFIND('(unicode)|(utf)', %'@type'%))
-                                                                    LENGTH(TrimmedUni(distributedInFile.%@name%)) > 0
+                                                                    LENGTH(TrimmedUni(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))) > 0
                                                                 #ELSEIF(REGEXFIND('string', %'@type'%))
-                                                                    LENGTH(TrimmedStr(distributedInFile.%@name%)) > 0
+                                                                    LENGTH(TrimmedStr(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))) > 0
                                                                 #ELSEIF(REGEXFIND('data', %'@type'%))
-                                                                    LENGTH(distributedInFile.%@name%) > 0
+                                                                    LENGTH(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%)) > 0
                                                                 #ELSEIF(%'@type'% = 'boolean')
                                                                     TRUE
                                                                 #ELSE
-                                                                    distributedInFile.%@name% != 0
+                                                                    distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%) != 0
                                                                 #END,
                                             BOOLEAN         is_number :=
                                                                 #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
@@ -451,7 +476,7 @@ EXPORT Profile(inFile,
                                                                     FALSE
                                                                 #END
                                         },
-                                        distributedInFile.%@name%,
+                                        distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%),
                                         LOCAL
                                     ),
                                     TRANSFORM(DataInfoRec, SELF := LEFT)
@@ -576,21 +601,32 @@ EXPORT Profile(inFile,
     // Build a set of attributes for quartiles, unique values, and modes for
     // each processed attribute
     #SET(recLevel, 0);
+    #SET(fieldStack, '');
+    #SET(namePrefix, '');
     #FOR(inFileFields)
         #FOR(Field)
-            #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
+            #IF(%{@isRecord}% = 1)
+                #SET(fieldStack, 'r' + %'fieldStack'%)
+                #APPEND(namePrefix, %'@name'% + '.')
+            #ELSEIF(%{@isDataset}% = 1)
+                #SET(fieldStack, 'd' + %'fieldStack'%)
                 #SET(recLevel, %recLevel% + 1)
             #ELSEIF(%{@isEnd}% = 1)
-                #SET(recLevel, %recLevel% - 1)
+                #IF(%'fieldStack'%[1] = 'd')
+                    #SET(recLevel, %recLevel% - 1)
+                #ELSE
+                    #SET(namePrefix, REGEXREPLACE('\\w+\\.$', %'namePrefix'%, ''))
+                #END
+                #SET(fieldStack, %'fieldStack'%[2..]);
             #ELSEIF(%recLevel% = 0)
-                #IF(CanProcessAttribute(%'@name'%, %'@type'%))
+                #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%, %'@type'%))
                     // Note that we create explicit attributes here for all
                     // top-level attributes in the dataset that we're
                     // processing, even if they are not numeric datatypes
                     #UNIQUENAME(uniqueNumericValueCounts)
                     %uniqueNumericValueCounts% := PROJECT
                         (
-                            filledDataInfo(attribute = %'@name'% AND is_number),
+                            filledDataInfo(attribute = %'namePrefix'% + %'@name'% AND is_number),
                             TRANSFORM
                                 (
                                     {
@@ -605,10 +641,10 @@ EXPORT Profile(inFile,
                         );
 
                     // Explicit attributes containing scalars
-                    LOCAL #EXPAND(%'@name'% + '_min') := MIN(%uniqueNumericValueCounts%, value);
-                    LOCAL #EXPAND(%'@name'% + '_max') := MAX(%uniqueNumericValueCounts%, value);
-                    LOCAL #EXPAND(%'@name'% + '_ave') := SUM(%uniqueNumericValueCounts%, value * cnt) / SUM(%uniqueNumericValueCounts%, cnt);
-                    LOCAL #EXPAND(%'@name'% + '_std_dev') := SQRT(SUM(%uniqueNumericValueCounts%, (value - #EXPAND(%'@name'% + '_ave')) * (value - #EXPAND(%'@name'% + '_ave')) * cnt) / SUM(%uniqueNumericValueCounts%, cnt));
+                    LOCAL #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_min')) := MIN(%uniqueNumericValueCounts%, value);
+                    LOCAL #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_max')) := MAX(%uniqueNumericValueCounts%, value);
+                    LOCAL #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_ave')) := SUM(%uniqueNumericValueCounts%, value * cnt) / SUM(%uniqueNumericValueCounts%, cnt);
+                    LOCAL #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_std_dev')) := SQRT(SUM(%uniqueNumericValueCounts%, (value - #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_ave'))) * (value - #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_ave'))) * cnt) / SUM(%uniqueNumericValueCounts%, cnt));
 
                     // Determine the position of the last record in the original
                     // dataset that contains a particular value
@@ -639,7 +675,7 @@ EXPORT Profile(inFile,
                     LOCAL %q2Pos2% := %q2Pos1% + ((%wholeNumRecs% + 1) % 2);
                     #UNIQUENAME(q2Value2);
                     LOCAL %q2Value2% := MIN(%uniqueNumericValuePos%(valueEndPos >= %q2Pos2%), value);
-                    LOCAL #EXPAND(%'@name'% + '_q2_value') := AVE(%q2Value1%, %q2Value2%);
+                    LOCAL #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_q2_value')) := AVE(%q2Value1%, %q2Value2%);
 
                     // Find the lower quartile
                     #UNIQUENAME(q1Pos1);
@@ -650,24 +686,24 @@ EXPORT Profile(inFile,
                     LOCAL %q1Pos2% := %q1Pos1% + ((%halfNumRecs% + 1) % 2);
                     #UNIQUENAME(q1Value2);
                     LOCAL %q1Value2% := MIN(%uniqueNumericValuePos%(valueEndPos >= %q1Pos2%), value);
-                    LOCAL #EXPAND(%'@name'% + '_q1_value') := IF(%halfNumRecs% > 0, AVE(%q1Value2%, %q1Value2%), 0);
+                    LOCAL #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_q1_value')) := IF(%halfNumRecs% > 0, AVE(%q1Value1%, %q1Value2%), 0);
 
                     // Find the upper quartile
                     #UNIQUENAME(q3Pos1);
-                    LOCAL %q3Pos1% := %wholeNumRecs% - (%halfNumRecs% DIV 2) + (%halfNumRecs% % 2);
+                    LOCAL %q3Pos1% := MAX(%q2Pos1%, %q2Pos2%) + (%halfNumRecs% DIV 2) + (%halfNumRecs% % 2);
                     #UNIQUENAME(q3Value1);
                     LOCAL %q3Value1% := MIN(%uniqueNumericValuePos%(valueEndPos >= %q3Pos1%), value);
                     #UNIQUENAME(q3Pos2);
-                    LOCAL %q3Pos2% := %q3Pos1% + ((%halfNumRecs% + 1) % 2);
+                    LOCAL %q3Pos2% := %q3Pos1% - ((%halfNumRecs% + 1) % 2);
                     #UNIQUENAME(q3Value2);
                     LOCAL %q3Value2% := MIN(%uniqueNumericValuePos%(valueEndPos >= %q3Pos2%), value);
-                    LOCAL #EXPAND(%'@name'% + '_q3_value') := IF(%halfNumRecs% > 0, AVE(%q3Value1%, %q3Value2%), 0);
+                    LOCAL #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_q3_value')) := IF(%halfNumRecs% > 0, AVE(%q3Value1%, %q3Value2%), 0);
 
                     // Derive all unique data values and the number of times
                     // each occurs in the data
-                    LOCAL #EXPAND(%'@name'% + '_uniq_value_recs') := TABLE
+                    LOCAL #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_uniq_value_recs')) := TABLE
                         (
-                            filledDataInfo(attribute = %'@name'%),
+                            filledDataInfo(attribute = %'namePrefix'% + %'@name'%),
                             {
                                 string_value,
                                 UNSIGNED4 rec_count := SUM(GROUP, value_count)
@@ -682,10 +718,10 @@ EXPORT Profile(inFile,
                     // the TOPN calls to reduce the search space, which also
                     // effectively limit the final result to MAX_MODES records
                     #UNIQUENAME(topRecords);
-                    %topRecords% := TOPN(#EXPAND(%'@name'% + '_uniq_value_recs'), MAX_MODES, -rec_count);
+                    %topRecords% := TOPN(#EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_uniq_value_recs')), MAX_MODES, -rec_count);
                     #UNIQUENAME(topRecord)
                     %topRecord% := TOPN(%topRecords%, 1, -rec_count);
-                    LOCAL #EXPAND(%'@name'% + '_mode_values') := JOIN
+                    LOCAL #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_mode_values')) := JOIN
                         (
                             %topRecords%,
                             %topRecord%,
@@ -698,14 +734,14 @@ EXPORT Profile(inFile,
                                 ),
                             SMART
                         ) : ONWARNING(4531, IGNORE);
-                    
+
                     // Get records with low cardinality
-                    LOCAL #EXPAND(%'@name'% + '_lcb_recs') := IF
+                    LOCAL #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_lcb_recs')) := IF
                         (
-                            COUNT(#EXPAND(%'@name'% + '_uniq_value_recs')) <= lowCardinalityThreshold,
+                            COUNT(#EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_uniq_value_recs'))) <= lowCardinalityThreshold,
                             PROJECT
                                 (
-                                    SORT(#EXPAND(%'@name'% + '_uniq_value_recs'), -rec_count),
+                                    SORT(#EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_uniq_value_recs')), -rec_count),
                                     TRANSFORM
                                         (
                                             ModeRec,
@@ -847,62 +883,73 @@ EXPORT Profile(inFile,
         (
             [
                 #SET(recLevel, 0)
+                #SET(fieldStack, '')
+                #SET(namePrefix, '')
                 #SET(needsDelim, 0)
                 #FOR(inFileFields)
                     #FOR(Field)
-                        #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
+                        #IF(%{@isRecord}% = 1)
+                            #SET(fieldStack, 'r' + %'fieldStack'%)
+                            #APPEND(namePrefix, %'@name'% + '.')
+                        #ELSEIF(%{@isDataset}% = 1)
+                            #SET(fieldStack, 'd' + %'fieldStack'%)
                             #SET(recLevel, %recLevel% + 1)
                         #ELSEIF(%{@isEnd}% = 1)
-                            #SET(recLevel, %recLevel% - 1)
+                            #IF(%'fieldStack'%[1] = 'd')
+                                #SET(recLevel, %recLevel% - 1)
+                            #ELSE
+                                #SET(namePrefix, REGEXREPLACE('\\w+\\.$', %'namePrefix'%, ''))
+                            #END
+                            #SET(fieldStack, %'fieldStack'%[2..])
                         #ELSEIF(%recLevel% = 0)
-                            #IF(CanProcessAttribute(%'@name'%, %'@type'%))
+                            #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%, %'@type'%))
                                 #IF(%needsDelim% = 1) , #END
 
                                 {
-                                    %'@name'%,
+                                    %'namePrefix'% + %'@name'%,
                                     #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
                                         TRUE,
                                     #ELSE
                                         FALSE,
                                     #END
                                     #IF(FeatureEnabledCardinality())
-                                        COUNT(#EXPAND(%'@name'% + '_uniq_value_recs')),
+                                        COUNT(#EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_uniq_value_recs'))),
                                     #ELSE
                                         0,
                                     #END
                                     #IF(FeatureEnabledMinMax())
-                                        #EXPAND(%'@name'% + '_min'),
-                                        #EXPAND(%'@name'% + '_max'),
+                                        #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_min')),
+                                        #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_max')),
                                     #ELSE
                                         0,
                                         0,
                                     #END
                                     #IF(FeatureEnabledMean())
-                                        #EXPAND(%'@name'% + '_ave'),
+                                        #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_ave')),
                                     #ELSE
                                         0,
                                     #END
                                     #IF(FeatureEnabledStdDev())
-                                        #EXPAND(%'@name'% + '_std_dev'),
+                                        #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_std_dev')),
                                     #ELSE
                                         0,
                                     #END
                                     #IF(FeatureEnabledQuartiles())
-                                        #EXPAND(%'@name'% + '_q1_value'),
-                                        #EXPAND(%'@name'% + '_q2_value'),
-                                        #EXPAND(%'@name'% + '_q3_value'),
+                                        #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_q1_value')),
+                                        #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_q2_value')),
+                                        #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_q3_value')),
                                     #ELSE
                                         0,
                                         0,
                                         0,
                                     #END
                                     #IF(FeatureEnabledModes())
-                                        #EXPAND(%'@name'% + '_mode_values')(rec_count > 1), // Modes must have more than one instance
+                                        #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_mode_values'))(rec_count > 1), // Modes must have more than one instance
                                     #ELSE
                                         DATASET([], ModeRec),
                                     #END
                                     #IF(FeatureEnabledLowCardinalityBreakdown())
-                                        #EXPAND(%'@name'% + '_lcb_recs')
+                                        #EXPAND(MakeAttr(%'namePrefix'% + %'@name'% + '_lcb_recs'))
                                     #ELSE
                                         DATASET([], ModeRec)
                                     #END
