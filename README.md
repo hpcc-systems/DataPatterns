@@ -38,6 +38,7 @@ level, such as within your "My Files" folder.
 |1.2.0|Add option to emit a suitable TRANSFORM function to BestRecordStructure and BestRecordStructureFromPath|
 |1.2.1|Just-sprayed CSV files now supported within BestRecordStructureFromPath|
 |1.2.2|Bug fix: Support datasets that contain reserved words as field names (e.g. loop)|
+|1.3.0|Support for embedded child records; bug fix for proper computing of upper quartile value|
 
 
 ### Profile
@@ -157,12 +158,9 @@ Documentation as pulled from the beginning of Profile.ecl:
 
     All other characters are left as-is in the pattern.
 
-    Only the top level attributes within a dataset are processed; embedded
-    records and child recordsets are skipped.  SET data types (such as
-    SET OF INTEGER) are also skipped.  If the dataset contains only
-    embedded records and/or child recordsets, or if fieldListStr is specified
-    but with attributes that don't actually exist in the top level (or are
-    invalid) then an error will be produced during compilation time.
+    Child datasets and SET data types (such as SET OF INTEGER) are not
+    supported.  If the input dataset cannot be processed then an error will be
+    produced at compile time.
 
     This function works best when the incoming dataset contains attributes that
     have precise data types (e.g. UNSIGNED4 data types instead of numbers
@@ -270,11 +268,11 @@ percentage of the dataset to examine (1-100) as the second argument.  This is
 useful if you are checking a very large file and are confident that a sample
 will provide correct results.
 
-There is an important limitation in this function:  Child datasets and embedded
-record definitions are ignored entirely (this comes from the fact that this
-function calls the Profile() function, and that function ignores child datasets
-and embedded records).  All other top-level attributes are returned, though, so
-you can edit the returned string and insert anything that is missing.
+There is an important limitation in this function:  Child datasets and SET
+data types are ignored entirely (this comes from the fact that this
+function calls the Profile() function, and that function ignores those items).
+All other top-level attributes are returned, though, so you can edit the
+returned string and insert anything that is missing.
 
 Sample call:
 
