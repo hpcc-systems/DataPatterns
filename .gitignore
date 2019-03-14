@@ -3,7 +3,7 @@
 .vscode
 *.out.res
 *.out_link.log.tmp
-/eclcc.log
+eclcc.log
 report/dist
 report/node_modules
 report/lib-es6
