@@ -152,9 +152,10 @@ EXPORT ProfileFromPath(path,
 
     LOCAL resultProfile := CASE
         (
-            fileKind,
+            TRIM(fileKind, ALL),
             'flat'  =>  RunProfileAndCoerce(flatDataset, maxPatterns, maxPatternLen, features, sampleSize, lcbLimit),
             'csv'   =>  RunProfileAndCoerce(csvDataset, maxPatterns, maxPatternLen, features, sampleSize, lcbLimit),
+            ''      =>  RunProfileAndCoerce(csvDataset, maxPatterns, maxPatternLen, features, sampleSize, lcbLimit),
             ERROR(DATASET([], CommonResultRec), 'Cannot run Profile on file of kind "' + fileKind + '"')
         );
 

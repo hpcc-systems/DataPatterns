@@ -39,6 +39,7 @@ level, such as within your "My Files" folder.
 |1.2.1|Just-sprayed CSV files now supported within BestRecordStructureFromPath|
 |1.2.2|Bug fix: Support datasets that contain reserved words as field names (e.g. loop)|
 |1.3.0|Support for embedded child records; bug fix for proper computing of upper quartile value|
+|1.3.1|Just-sprayed CSV files now supported within ProfileFromPath|
 
 
 ### Profile
