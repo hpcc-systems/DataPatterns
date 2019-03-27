@@ -54,19 +54,14 @@ EXPORT BestRecordStructureFromPath(path, sampling = 100, emitTransform = FALSE, 
     LOCAL GetFileAttribute(STRING attr) := NOTHOR(Std.File.GetLogicalFileAttribute(path, attr));
 
     // Gather certain metadata about the given path
-    LOCAL fileKind := GetFileAttribute('kind');
-    LOCAL sep := GetFileAttribute('csvSeparate');
-    LOCAL term := GetFileAttribute('csvTerminate');
-    LOCAL quoteChar := GetFileAttribute('csvQuote');
-    LOCAL escChar := GetFileAttribute('csvEscape');
-    LOCAL headerLineCnt := GetFileAttribute('headerLength');
+    LOCAL headerLineCnt := (UNSIGNED2)GetFileAttribute('headerLength');
 
     // Dataset declaration for a delimited file
     LOCAL csvDataset := DATASET
         (
             path,
             RECORDOF(path, LOOKUP),
-            CSV(HEADING(headerLineCnt), SEPARATOR(sep), TERMINATOR(term), QUOTE(quoteChar), ESCAPE(escChar))
+            CSV(HEADING(headerLineCnt)) // other settings will default to metadata values
         );
 
     // Dataset declaration for a flat file
