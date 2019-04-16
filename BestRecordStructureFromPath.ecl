@@ -54,6 +54,7 @@ EXPORT BestRecordStructureFromPath(path, sampling = 100, emitTransform = FALSE, 
     LOCAL GetFileAttribute(STRING attr) := NOTHOR(Std.File.GetLogicalFileAttribute(path, attr));
 
     // Gather certain metadata about the given path
+    LOCAL fileKind := GetFileAttribute('kind');
     LOCAL headerLineCnt := (UNSIGNED2)GetFileAttribute('headerLength');
 
     // Dataset declaration for a delimited file
