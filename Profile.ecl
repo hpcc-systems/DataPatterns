@@ -579,13 +579,13 @@ EXPORT Profile(inFile,
                     AttributeTypeRec,
                     SELF.best_attribute_type := MAP
                         (
-                            REGEXFIND('(decimal)|(boolean)', LEFT.given_attribute_type)         =>  LEFT.given_attribute_type,
-                            REGEXFIND('data', LEFT.given_attribute_type)                        =>  'data' + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, ''),
-                            (LEFT.type_flag & DataTypeEnum.UnsignedInteger) != 0                =>  'unsigned' + Len2Size(LEFT.data_length),
-                            (LEFT.type_flag & DataTypeEnum.SignedInteger) != 0                  =>  'integer' + Len2Size(LEFT.data_length),
-                            (LEFT.type_flag & DataTypeEnum.FloatingPoint) != 0                  =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
-                            (LEFT.type_flag & DataTypeEnum.ExpNotation) != 0                    =>  'real8',
-                            REGEXFIND('(utf)|(real)', LEFT.given_attribute_type)                =>  LEFT.given_attribute_type,
+                            REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', LEFT.given_attribute_type) =>  LEFT.given_attribute_type,
+                            REGEXFIND('data', LEFT.given_attribute_type)                                            =>  'data' + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, ''),
+                            (LEFT.type_flag & DataTypeEnum.UnsignedInteger) != 0                                    =>  'unsigned' + Len2Size(LEFT.data_length),
+                            (LEFT.type_flag & DataTypeEnum.SignedInteger) != 0                                      =>  'integer' + Len2Size(LEFT.data_length),
+                            (LEFT.type_flag & DataTypeEnum.FloatingPoint) != 0                                      =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
+                            (LEFT.type_flag & DataTypeEnum.ExpNotation) != 0                                        =>  'real8',
+                            REGEXFIND('utf', LEFT.given_attribute_type)                                             =>  LEFT.given_attribute_type,
                             REGEXREPLACE('\\d+$', TRIM(LEFT.given_attribute_type), '') + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, '')
                         ),
                     SELF := LEFT
