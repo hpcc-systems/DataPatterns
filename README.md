@@ -41,6 +41,7 @@ level, such as within your "My Files" folder.
 |1.3.0|Support for embedded child records; bug fix for proper computing of upper quartile value|
 |1.3.1|Just-sprayed CSV files now supported within ProfileFromPath|
 |1.3.2|Allow most CSV attributes to acquire default values in ProfileFromPath and BestRecordStructureFromPath|
+|1.3.3|Add file kind gathering back to the code (regression from 1.3.2)|
 
 
 ### Profile
