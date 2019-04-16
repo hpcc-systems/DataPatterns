@@ -3,7 +3,7 @@ import nodeResolve from 'rollup-plugin-node-resolve';
 const pkg = require("./package.json");
 
 function externals(id) {
-    return !!pkg.dependencies[id];
+    return id.indexOf("@hpcc-js/") === 0;
 }
 
 function globals(id) {

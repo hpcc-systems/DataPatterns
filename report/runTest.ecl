@@ -1,8 +1,8 @@
 IMPORT ^ as DataPatterns;
 
-filePath := 'heart_disease_uci.csv';
+filePath := '~stock_data::cleaned_data';
 
-ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), CSV);
+ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
 
 profileResults := DataPatterns.Profile(ds);
 

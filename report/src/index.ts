@@ -1,9 +1,9 @@
-import { QuartileCandlestick } from "@hpcc-js/chart";
 import { Widget } from "@hpcc-js/common";
 import { Result, Workunit, WUInfo } from "@hpcc-js/comms";
 import { Grid } from "@hpcc-js/layout";
 import { Html } from "@hpcc-js/other";
 import { BreakdownTable, StyledTable } from "@hpcc-js/html";
+import { StatChart } from "./statChart";
 
 const knownProfileField = (sch: WUInfo.ECLSchemaItem): boolean => ["attribute", "given_attribute_type", "best_attribute_type", "rec_count", "fill_count", "fill_rate", "cardinality", "cardinality_breakdown", "modes", "min_length", "max_length", "ave_length", "popular_patterns", "rare_patterns", "is_numeric", "numeric_min", "numeric_max", "numeric_mean", "numeric_std_dev", "numeric_lower_quartile", "numeric_median", "numeric_upper_quartile", "numeric_correlations"].indexOf(sch.ColumnName) > 0;
 const countProfileFields = (r: Result): number => r.ECLSchemas.ECLSchemaItem.filter(knownProfileField).length;
@@ -11,6 +11,13 @@ const isProfileResult = (r: Result, threshold = 4): boolean => countProfileField
 
 const config = {
     rowHeight: 190,
+    colRatios: {
+        attributeDesc: 1,
+        statsData: 1,
+        breakdown: 2 / 3,
+        quartile: 1,
+        popularPatterns: 1
+    },
     primaryFontSize: 20,
     secondaryFontSize: 14,
     primaryColor: "#494949",
@@ -51,30 +58,44 @@ export class Report extends Grid {
         this.height(this._fixedHeight);
         super.enter(domNode, element);
         const statsDataWidth = this.calcStatsWidgetDataColumnWidth();
-
-        this._showBreakdownColumn = this._data.filter(row=>row.cardinality_breakdown.Row.length > 0).length > 0;
-        this._showPopularPatternsColumn = this._data.filter(row=>row.popular_patterns.Row.length > 0).length > 0;
-        this._showQuartileColumn =  this._data.filter(row=>row.is_numeric).length > 0;
+        this._showQuartileColumn = this._data.filter(row => row.is_numeric).length > 0;
+        this._showBreakdownColumn = this._data.filter(row => row.cardinality_breakdown.Row.length > 0).length > 0;
+        this._showPopularPatternsColumn = this._data.filter(row => row.popular_patterns.Row.length > 0).length > 0;
         let colCount = 3;
         this._data.forEach((row, i) => {
-            const cc = this.enterDataRow(row, i, {statsDataWidth});
-            if(cc > colCount){
+            const cc = this.enterDataRow(row, i, { statsDataWidth });
+            if (cc > colCount) {
                 colCount = cc;
             }
         });
-        element.classed("report-col-count-"+colCount, true);
+        element.classed("report-col-count-" + colCount, true);
     }
 
-    enterDataRow(row, i, ext){
+    enterDataRow(row, i, ext) {
         const y = i * config.rowHeight;
 
-        let c = 0;
-        this.setContent(y, c++, getAttributeDescWidget(row), undefined, config.rowHeight);
-        this.setContent(y, c++, getStatsWidget(row, ext.statsDataWidth), undefined, config.rowHeight);
-        if(this._showBreakdownColumn)this.setContent(y, c++, getBreakdownWidget(row), undefined, config.rowHeight);
-        if(this._showPopularPatternsColumn)this.setContent(y, c++, getPopularPatternsWidget(row), undefined, config.rowHeight);
-        if(this._showQuartileColumn)this.setContent(y, c++, getQuartileWidget(row), undefined, config.rowHeight);
-
+        let c = 2;
+        let cPos = 0;
+        let cStep = 12;
+        this.setContent(y, cPos, getAttributeDescWidget(row), undefined, config.rowHeight, cStep * config.colRatios.attributeDesc);
+        cPos += cStep * config.colRatios.attributeDesc;
+        this.setContent(y, cPos, getStatsWidget(row, ext.statsDataWidth), undefined, config.rowHeight, cStep * config.colRatios.statsData);
+        cPos += cStep * config.colRatios.statsData;
+        if (this._showQuartileColumn) {
+            this.setContent(y, cPos, getQuartileWidget(row), undefined, config.rowHeight, cStep * config.colRatios.quartile);
+            cPos += cStep * config.colRatios.quartile;
+            ++c;
+        }
+        if (this._showBreakdownColumn) {
+            this.setContent(y, cPos, getBreakdownWidget(row), undefined, config.rowHeight, cStep * config.colRatios.breakdown);
+            cPos += cStep * config.colRatios.breakdown;
+            ++c;
+        }
+        if (this._showPopularPatternsColumn) {
+            this.setContent(y, cPos, getPopularPatternsWidget(row), undefined, config.rowHeight, cStep * config.colRatios.popularPatterns);
+            cPos += cStep * config.colRatios.popularPatterns;
+            ++c;
+        }
         return c;
 
         function getAttributeDescWidget(row) {
@@ -148,7 +169,7 @@ export class Report extends Grid {
         function getBreakdownWidget(row) {
             if (row.cardinality_breakdown.Row.length > 0) {
                 return new BreakdownTable()
-                    .columns(["Cardinality Breakdown", ""])
+                    .columns(["Cardinality", ""])
                     .data(
                         row.cardinality_breakdown.Row
                             .map(row => [
@@ -177,7 +198,7 @@ export class Report extends Grid {
                     ])
                     ;
             } else {
-                return getNotAvailableWidget("Cardinality Breakdown","N/A");
+                return getNotAvailableWidget("Cardinality Breakdown", "N/A");
             }
         }
         function getStatsWidget(row, dataWidth) {
@@ -187,7 +208,7 @@ export class Report extends Grid {
                         ["Mean", row.numeric_mean, ""],
                         ["Std. Deviation", row.numeric_std_dev, ""],
                         ["", "", ""],
-                        ["Quantiles", row.numeric_min, "Min"],
+                        ["Quartiles", row.numeric_min, "Min"],
                         ["", row.numeric_lower_quartile, "25%"],
                         ["", row.numeric_median, "50%"],
                         ["", row.numeric_upper_quartile, "75%"],
@@ -195,7 +216,7 @@ export class Report extends Grid {
                     ])
                     .tbodyColumnStyles([
                         { "font-weight": "bold", "text-align": "right", "width": "100px" },
-                        { "font-weight": "normal", "width": dataWidth+"px" },
+                        { "font-weight": "normal", "width": dataWidth + "px" },
                         { "font-weight": "normal", "width": "auto" },
                     ])
                     ;
@@ -214,7 +235,7 @@ export class Report extends Grid {
             }
             return getAttributeDescWidget(row);
         }
-        function getPopularPatternsWidget(row){
+        function getPopularPatternsWidget(row) {
             if (row.popular_patterns.Row.length > 0) {
                 return new BreakdownTable()
                     .columns(["Popular Patterns", ""])
@@ -245,32 +266,28 @@ export class Report extends Grid {
                             ])
                     );
             } else {
-                return getNotAvailableWidget("Popular Patterns","N/A");
+                return getNotAvailableWidget("Popular Patterns", "N/A");
             }
         }
-        function getQuartileWidget(row){
+        function getQuartileWidget(row) {
             if (row.is_numeric) {
-                return new QuartileCandlestick()
-                    .columns(["Min", "25%", "50%", "75%", "Max"])
-                    .data([
+                return new StatChart()
+                    //.columns(["Min", "25%", "50%", "75%", "Max"])
+                    .mean(row.numeric_mean)
+                    .standardDeviation(row.numeric_std_dev)
+                    .quartiles([
                         row.numeric_min,
                         row.numeric_lower_quartile,
                         row.numeric_median,
                         row.numeric_upper_quartile,
                         row.numeric_max
                     ])
-                    .edgePadding(30)
-                    .candleWidth(20)
-                    .roundedCorners(1)
-                    .lineWidth(1)
-                    .upperTextRotation(-90)
-                    .lowerTextRotation(-90)
                     ;
             } else {
-                return getNotAvailableWidget("Quartile","N/A");
+                return getNotAvailableWidget("Quartile", "N/A");
             }
         }
-        function getNotAvailableWidget(message, submessage){
+        function getNotAvailableWidget(message, submessage) {
             return new Html()
                 .html(`
                     <b style="line-height:23px;font-size:${config.secondaryFontSize}px;color: rgb(51, 51, 51);">${message}</b>
@@ -324,7 +341,7 @@ export class Report extends Grid {
 
     calcStatsWidgetDataColumnWidth() {
         let ret = 0;
-        this._data.forEach(row=>{
+        this._data.forEach(row => {
             const _w = Math.max(
                 this.textSize(row.numeric_mean).width,
                 this.textSize(row.numeric_std_dev).width,
@@ -334,7 +351,7 @@ export class Report extends Grid {
                 this.textSize(row.numeric_upper_quartile).width,
                 this.textSize(row.numeric_max).width
             );
-            if(_w > ret){
+            if (_w > ret) {
                 ret = _w;
             }
         });
