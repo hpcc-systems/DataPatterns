@@ -43,6 +43,7 @@ level, such as within your "My Files" folder.
 |1.3.2|Allow most CSV attributes to acquire default values in ProfileFromPath and BestRecordStructureFromPath|
 |1.3.3|Add file kind gathering back to the code in ProfileFromPath and BestRecordStructureFromPath (regression from 1.3.2)|
 |1.3.4|When given explicit numeric attribute types, refrain from recommending a "best" attribute type|
+|1.3.5|Fix ordering of output in BestRecordStructure when TRANSFORM is emitted|
 |1.4.0|Automatically include improved visual results of Profile, including data distribution graphs (within workunit's Resources tab)|
 
 

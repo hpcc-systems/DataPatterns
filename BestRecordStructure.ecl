@@ -265,7 +265,7 @@ EXPORT BestRecordStructure(inFile, sampling = 100, emitTransform = FALSE, textOu
 
     // Create the top-level record definition
     LOCAL topLevel := DATASET(['NewLayout := RECORD'], OutRec)
-        + PROJECT
+        & PROJECT
             (
                 SORT(fieldInfo6, position),
                 TRANSFORM
@@ -274,7 +274,7 @@ EXPORT BestRecordStructure(inFile, sampling = 100, emitTransform = FALSE, textOu
                         SELF.s := '    ' + IF(Std.Str.Contains(LEFT.bestAttributeType, '{', FALSE), LEFT.bestAttributeType, Std.Str.ToUpperCase(LEFT.bestAttributeType)) + ' ' + LEFT.name + ';'
                     )
             )
-        + DATASET(['END;'], OutRec);
+        & DATASET(['END;'], OutRec);
 
     // Final output includes the named child records and the top-level record
     // definition we just built
@@ -341,7 +341,7 @@ EXPORT BestRecordStructure(inFile, sampling = 100, emitTransform = FALSE, textOu
         );
 
     // Combine optional transform
-    LOCAL allOutput := layoutRes + DATASET(transformSet, OutRec);
+    LOCAL allOutput := layoutRes & DATASET(transformSet, OutRec);
 
     // Roll everything up to one string with HTML line breaks
     LOCAL htmlString := ROLLUP
