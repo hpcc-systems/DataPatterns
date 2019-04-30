@@ -242,6 +242,36 @@ Here is a very simple example of executing the full data profiling code:
 
     OUTPUT(profileResults, ALL, NAMED('profileResults'));
 
+### Summary Report with Graphs
+
+A report is generated based on the output of `Profile()`. The report is accessible via a Workunit's *Resources* tab within ECL Watch. For example:
+
+![Screen capture displaying active Resources tab](https://user-images.githubusercontent.com/1891935/57020403-2ac29480-6bf7-11e9-9584-a6fd23a3b4c4.png)
+
+A report can also be viewed directly once a workunit has completed. For example:
+https://play.hpccsystems.com:18010/WsWorkunits/res/W20190430-175856/report/res/index.html
+(NOTE: This example URL was valid at the time of writing this README entry. Simply swap out the WUID in the URL with the WUID containing your Profile results to view your report)
+
+Every `attribute` in the Profile result is represented by a row of information. 
+Each row of information is organized into several columns. Here is a short description 
+of each column:
+
+1. Type information, Cardinality Count & Filled Count
+2. Min, Avg, Max Length (for string attributes) or Mean, Std. Deviation, Quartiles (for numeric attributes)
+3. Quartile bell curve and candlestick
+    * only shown for attributes with `is_numeric` === `true`
+    * this column is omitted if the above condition fails for all attributes
+4. Cardinality Breakdown listed by count descending
+    * only shown for attributes with `cardinality_breakdown` content
+    * this column is omitted if the above condition fails for all attributes
+5. Popular Patterns 
+    * only shown for attributes with `popular_patterns` content
+    * this column is omitted if the above condition fails for all attributes
+
+This is a screen capture displaying a report row for a string attribute ("Test\_Name") and a numeric attribute ("Test\_Score"):
+
+![Screen capture of two report rows](https://user-images.githubusercontent.com/1891935/56989566-c228d880-6b60-11e9-87a8-c2aa1c76b3d8.png)
+
 ### ProfileFromPath
 
 You can also profile a logical file by knowing only its path.  Note that this
