@@ -3,6 +3,18 @@
 DataPatterns is an ECL bundle that provides some basic data profiling and
 research tools to an ECL programmer.
 
+### Table of Contents
+
+  * [Installation](#installation)
+  * [Release Notes](#release_notes)
+  * [Profile()](#profile)
+  * [Summary Report with Graphs](#summary_report_with_graphs)
+  * [ProfileFromPath()](#profilefrompath)
+  * [BestRecordStructure()](#bestrecordstructure)
+  * [BestRecordStructureFromPath()](#bestrecordstructurefrompath)
+  * [Testing](#testing)
+
+<a name="installation"></a>
 ### Installation
 
 This code is installed as an ECL Bundle.  Complete instructions for managing ECL
@@ -26,6 +38,7 @@ file. With the Windows IDE, the DataPatterns directory must not be a top-level
 item in your repository list; it needs to be installed one level below the top
 level, such as within your "My Files" folder.
 
+<a name="release_notes"></a>
 ### Release Notes
 
 |Version|Notes|
@@ -46,7 +59,7 @@ level, such as within your "My Files" folder.
 |1.3.5|Fix ordering of output in BestRecordStructure when TRANSFORM is emitted|
 |1.4.0|Automatically include improved visual results of Profile, including data distribution graphs (within workunit's Resources tab)|
 
-
+<a name="profile"></a>
 ### Profile
 
 Documentation as pulled from the beginning of Profile.ecl:
@@ -248,15 +261,19 @@ Here is a very simple example of executing the full data profiling code:
 
     OUTPUT(profileResults, ALL, NAMED('profileResults'));
 
+<a name="summary_report_with_graphs"></a>
 ### Summary Report with Graphs
 
-A report is generated based on the output of `Profile()`. The report is accessible via a Workunit's *Resources* tab within ECL Watch. For example:
+A report is generated based on the output of `Profile()`. The report is
+accessible via a Workunit's *Resources* tab within ECL Watch. For example:
 
 ![Screen capture displaying active Resources tab](https://user-images.githubusercontent.com/1891935/57020403-2ac29480-6bf7-11e9-9584-a6fd23a3b4c4.png)
 
 A report can also be viewed directly once a workunit has completed. For example:
 https://play.hpccsystems.com:18010/WsWorkunits/res/W20190430-175856/report/res/index.html
-(NOTE: This example URL was valid at the time of writing this README entry. Simply swap out the WUID in the URL with the WUID containing your Profile results to view your report)
+(NOTE: This example URL was valid at the time of writing this README entry.)
+Simply swap out the host name and WUID in the URL with the WUID containing your
+Profile results to view your report.
 
 Every `attribute` in the Profile result is represented by a row of information. 
 Each row of information is organized into several columns. Here is a short description 
@@ -274,10 +291,12 @@ of each column:
     * only shown for attributes with `popular_patterns` content
     * this column is omitted if the above condition fails for all attributes
 
-This is a screen capture displaying a report row for a string attribute ("Test\_Name") and a numeric attribute ("Test\_Score"):
+This is a screen capture displaying a report row for a string attribute
+("Test\_Name") and a numeric attribute ("Test\_Score"):
 
 ![Screen capture of two report rows](https://user-images.githubusercontent.com/1891935/56989566-c228d880-6b60-11e9-87a8-c2aa1c76b3d8.png)
 
+<a name="profilefrompath"></a>
 ### ProfileFromPath
 
 You can also profile a logical file by knowing only its path.  Note that this
@@ -295,6 +314,7 @@ requires HPCC Systems version 6.4.0 or later.
 of `fieldListStr` (the assumption is, if you know the fields then you know
 enough to construct a dataset and can use `Profile` instead).
 
+<a name="bestrecordstructure"></a>
 ### BestRecordStructure
 
 This is a function macro that, given a dataset, returns a recordset containing
@@ -333,6 +353,7 @@ it is a good idea to add an ALL flag to the OUTPUT function.  This ensures that
 all attributes will be displayed.  Otherwise, if you have more than 100
 attributes in the given dataset, the result will be truncated.
 
+<a name="bestrecordstructurefrompath"></a>
 ### BestRecordStructureFromPath
 
 Similar to `ProfileFromPath`, you can obtain the best ECL record structure for a
@@ -354,6 +375,7 @@ comments within the function for details.
 `BestRecordStructureFromPath` accepts the same optional arguments as
 `BestRecordStructure`.
 
+<a name="testing"></a>
 ### Testing
 
 The data profiling code can be easily tested with the included Tests module.
