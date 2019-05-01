@@ -1,0 +1,5 @@
+<Manifest>
+    <Resource filename="./report/res/index.html" />
+    <Resource filename="./report/res/index.css" />
+    <Resource filename="./report/res/index.min.js" />
+</Manifest>
