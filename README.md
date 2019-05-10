@@ -58,6 +58,7 @@ level, such as within your "My Files" folder.
 |1.3.4|When given explicit numeric attribute types, refrain from recommending a "best" attribute type|
 |1.3.5|Fix ordering of output in BestRecordStructure when TRANSFORM is emitted|
 |1.4.0|Automatically include improved visual results of Profile, including data distribution graphs (within workunit's Resources tab)|
+|1.4.1|Regression: Fix self-tests that were failing due to changes in v1.3.4|
 
 <a name="profile"></a>
 ### Profile
