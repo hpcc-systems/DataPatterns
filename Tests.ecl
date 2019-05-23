@@ -474,4 +474,29 @@ EXPORT Tests := MODULE
             ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_correlations) = 2),
             ASSERT(TRUE)
         ];
+
+    //--------------------------------------------------------------------------
+    // Test strings fields containing numerics with leading zeros (issue 42)
+    //--------------------------------------------------------------------------
+
+    SHARED Leading_Zeros := DATASET
+        (
+            [
+                {'0100', '1234', '0001', '7809', '-0600'},
+                {'0020', '0001', '0023', '0001', '600'}
+            ],
+            {STRING s1, STRING s2, STRING s3, STRING s4, STRING s5}
+        );
+
+    SHARED Leading_Zeros_Profile := DataPatterns.Profile(NOFOLD(Leading_Zeros), features := 'best_ecl_types');
+
+    EXPORT Test_Leading_Zeros_Profile :=
+        [
+            ASSERT(ValueForAttr(Leading_Zeros_Profile, 's1', best_attribute_type) = 'string4'),
+            ASSERT(ValueForAttr(Leading_Zeros_Profile, 's2', best_attribute_type) = 'string4'),
+            ASSERT(ValueForAttr(Leading_Zeros_Profile, 's3', best_attribute_type) = 'string4'),
+            ASSERT(ValueForAttr(Leading_Zeros_Profile, 's4', best_attribute_type) = 'string4'),
+            ASSERT(ValueForAttr(Leading_Zeros_Profile, 's5', best_attribute_type) = 'integer3'),
+            ASSERT(TRUE)
+        ];
 END;
