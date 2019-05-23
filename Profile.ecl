@@ -229,12 +229,12 @@ EXPORT Profile(inFile,
     // Useful functions for pattern mapping
     LOCAL MapUpperCharStr(STRING s) := REGEXREPLACE('[[:upper:]]', s, 'A');
     LOCAL MapLowerCharStr(STRING s) := REGEXREPLACE('[[:lower:]]', s, 'a');
-    LOCAL MapDigitStr(STRING s) := REGEXREPLACE('[[:digit:]]', s, '9');
+    LOCAL MapDigitStr(STRING s) := REGEXREPLACE('[1-9]', s, '9'); // Leave '0' as-is and replace with '9' later
     LOCAL MapAllStr(STRING s) := MapDigitStr(MapLowerCharStr(MapUpperCharStr(s)));
 
     LOCAL MapUpperCharUni(UNICODE s) := REGEXREPLACE(u'[[:upper:]]', s, u'A');
     LOCAL MapLowerCharUni(UNICODE s) := REGEXREPLACE(u'[[:lower:]]', s, u'a');
-    LOCAL MapDigitUni(UNICODE s) := REGEXREPLACE(u'[[:digit:]]', s, u'9');
+    LOCAL MapDigitUni(UNICODE s) := REGEXREPLACE(u'[1-9]', s, u'9'); // Leave '0' as-is and replace with '9' later
     LOCAL MapAllUni(UNICODE s) := (STRING)MapDigitUni(MapLowerCharUni(MapUpperCharUni(s)));
 
     LOCAL TrimmedStr(STRING s) := TRIM(s, LEFT, RIGHT);
@@ -507,14 +507,15 @@ EXPORT Profile(inFile,
                 ExpNotation = 8
         );
 
-    LOCAL DataTypeEnum BestTypeFlag(STRING dataPattern) := FUNCTION
-        isSignedInteger := REGEXFIND('^\\-9{1,19}$', dataPattern);
-        isShortUnsignedInteger := REGEXFIND('^9{1,19}$', dataPattern);
-        isUnsignedInteger := REGEXFIND('^\\+?9{1,20}$', dataPattern);
-        isFloatingPoint := REGEXFIND('^(\\-|\\+)?9{0,15}\\.9{1,15}$', dataPattern);
-        isExpNotation := REGEXFIND('^(\\-|\\+)?9\\.9{1,6}a\\-9{1,3}$', dataPattern, NOCASE);
+    LOCAL DataTypeEnum BestTypeFlag(STRING dataPattern, AttributeType_t attributeType) := FUNCTION
+        hasLeadingZeros := REGEXFIND('^0+', dataPattern);
+        isSignedInteger := REGEXFIND('^\\-[09]{1,19}$', dataPattern);
+        isShortUnsignedInteger := REGEXFIND('^[09]{1,19}$', dataPattern);
+        isUnsignedInteger := REGEXFIND('^\\+?[09]{1,20}$', dataPattern);
+        isFloatingPoint := REGEXFIND('^(\\-|\\+)?[09]{0,15}\\.[09]{1,15}$', dataPattern);
+        isExpNotation := REGEXFIND('^(\\-|\\+)?[09]\\.[09]{1,6}[aA]\\-[09]{1,3}$', dataPattern);
 
-        RETURN MAP
+        stringWithNumbersType := MAP
             (
                 isSignedInteger         =>  DataTypeEnum.SignedInteger | DataTypeEnum.FloatingPoint | DataTypeEnum.ExpNotation,
                 isShortUnsignedInteger  =>  DataTypeEnum.SignedInteger | DataTypeEnum.UnsignedInteger | DataTypeEnum.FloatingPoint | DataTypeEnum.ExpNotation,
@@ -523,6 +524,15 @@ EXPORT Profile(inFile,
                 isExpNotation           =>  DataTypeEnum.ExpNotation,
                 DataTypeEnum.AsIs
             );
+
+        bestType := MAP
+            (
+                REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', attributeType) =>  DataTypeEnum.AsIs,
+                hasLeadingZeros                                                             =>  DataTypeEnum.AsIs,
+                stringWithNumbersType
+            );
+
+        RETURN bestType;
     END;
 
     // Estimate integer size from readable data length
@@ -536,11 +546,19 @@ EXPORT Profile(inFile,
                 given_attribute_type,
                 data_pattern,
                 data_length,
-                DataTypeEnum    type_flag := BestTypeFlag(TRIM(data_pattern))
+                DataTypeEnum    type_flag := BestTypeFlag(TRIM(data_pattern), given_attribute_type),
+                UNSIGNED4       min_data_length := 0 // will be populated within attributesWithTypeFlagsSummary
 
             },
             attribute, given_attribute_type, data_pattern, data_length,
             MERGE
+        );
+
+    LOCAL MinNotZero(UNSIGNED4 n1, UNSIGNED4 n2) := MAP
+        (
+            n1 = 0  =>  n2,
+            n2 = 0  =>  n1,
+            MIN(n1, n2)
         );
 
     LOCAL attributesWithTypeFlagsSummary := AGGREGATE
@@ -550,7 +568,8 @@ EXPORT Profile(inFile,
             TRANSFORM
                 (
                     RECORDOF(attributeTypePatterns),
-                    SELF.data_length := MAX(LEFT.data_length, RIGHT.data_length) ,
+                    SELF.data_length := MAX(LEFT.data_length, RIGHT.data_length),
+                    SELF.min_data_length := MinNotZero(LEFT.data_length, RIGHT.data_length),
                     SELF.type_flag := IF(TRIM(RIGHT.attribute) != '', LEFT.type_flag & RIGHT.type_flag, LEFT.type_flag),
                     SELF := LEFT
                 ),
@@ -558,6 +577,7 @@ EXPORT Profile(inFile,
                 (
                     RECORDOF(attributeTypePatterns),
                     SELF.data_length := MAX(RIGHT1.data_length, RIGHT2.data_length),
+                    SELF.min_data_length := MinNotZero(RIGHT1.data_length, RIGHT2.data_length),
                     SELF.type_flag := RIGHT1.type_flag & RIGHT2.type_flag,
                     SELF := RIGHT1
                 ),
@@ -580,13 +600,13 @@ EXPORT Profile(inFile,
                     SELF.best_attribute_type := MAP
                         (
                             REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', LEFT.given_attribute_type) =>  LEFT.given_attribute_type,
-                            REGEXFIND('data', LEFT.given_attribute_type)                                            =>  'data' + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, ''),
+                            REGEXFIND('data', LEFT.given_attribute_type)                                            =>  'data' + IF(LEFT.data_length > 0 AND (LEFT.data_length < (LEFT.min_data_length * 1000)), (STRING)LEFT.data_length, ''),
                             (LEFT.type_flag & DataTypeEnum.UnsignedInteger) != 0                                    =>  'unsigned' + Len2Size(LEFT.data_length),
                             (LEFT.type_flag & DataTypeEnum.SignedInteger) != 0                                      =>  'integer' + Len2Size(LEFT.data_length),
                             (LEFT.type_flag & DataTypeEnum.FloatingPoint) != 0                                      =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
                             (LEFT.type_flag & DataTypeEnum.ExpNotation) != 0                                        =>  'real8',
                             REGEXFIND('utf', LEFT.given_attribute_type)                                             =>  LEFT.given_attribute_type,
-                            REGEXREPLACE('\\d+$', TRIM(LEFT.given_attribute_type), '') + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, '')
+                            REGEXREPLACE('\\d+$', TRIM(LEFT.given_attribute_type), '') + IF(LEFT.data_length > 0 AND (LEFT.data_length < (LEFT.min_data_length * 1000)), (STRING)LEFT.data_length, '')
                         ),
                     SELF := LEFT
                 )
@@ -824,9 +844,20 @@ EXPORT Profile(inFile,
 
     // Count data patterns used per attribute; extract the most common and
     // most rare, taking care to not allow the two to overlap
+    LOCAL dataPatternStats0 := PROJECT
+        (
+            filledDataInfo,
+            TRANSFORM
+                (
+                    RECORDOF(LEFT),
+                    SELF.data_pattern := Std.Str.FindReplace(LEFT.data_pattern, '0', '9'),
+                    SELF := LEFT
+                )
+        );
+
     LOCAL dataPatternStats := TABLE
         (
-            DISTRIBUTE(filledDataInfo, HASH32(attribute)),
+            DISTRIBUTE(dataPatternStats0, HASH32(attribute)),
             {
                 attribute,
                 data_pattern,

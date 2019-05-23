@@ -474,4 +474,65 @@ EXPORT Tests := MODULE
             ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_correlations) = 2),
             ASSERT(TRUE)
         ];
+
+    //--------------------------------------------------------------------------
+    // Test strings fields containing numerics with leading zeros (issue 42)
+    //--------------------------------------------------------------------------
+
+    SHARED Leading_Zeros := DATASET
+        (
+            [
+                {'0100', '1234', '0001', '7809', '-0600'},
+                {'0020', '0001', '0023', '0001', '600'}
+            ],
+            {STRING s1, STRING s2, STRING s3, STRING s4, STRING s5}
+        );
+
+    SHARED Leading_Zeros_Profile := DataPatterns.Profile(NOFOLD(Leading_Zeros), features := 'best_ecl_types');
+
+    EXPORT Test_Leading_Zeros_Profile :=
+        [
+            ASSERT(ValueForAttr(Leading_Zeros_Profile, 's1', best_attribute_type) = 'string4'),
+            ASSERT(ValueForAttr(Leading_Zeros_Profile, 's2', best_attribute_type) = 'string4'),
+            ASSERT(ValueForAttr(Leading_Zeros_Profile, 's3', best_attribute_type) = 'string4'),
+            ASSERT(ValueForAttr(Leading_Zeros_Profile, 's4', best_attribute_type) = 'string4'),
+            ASSERT(ValueForAttr(Leading_Zeros_Profile, 's5', best_attribute_type) = 'integer3'),
+            ASSERT(TRUE)
+        ];
+
+    //--------------------------------------------------------------------------
+    // String fields with wildly varying lengths (three orders of magnitude
+    // difference) should become variable-length 'string' datatypes
+    //--------------------------------------------------------------------------
+
+    SHARED STRING MLS(UNSIGNED4 len) := EMBED(C++)
+        const char  letters[] = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+        __lenResult = len;
+        __result = static_cast<char*>(rtlMalloc(__lenResult));
+
+        for (uint32_t x = 0; x < len; x++)
+            __result[x] = letters[rand() % 36];
+    ENDEMBED;
+
+    SHARED Large_Strings := DATASET
+        (
+            [
+                {'abcd', '1234', '0001', '7', '-0600'},
+                {'0020', MLS(5000), MLS(500), MLS(1050), '600'}
+            ],
+            {STRING s1, STRING s2, STRING s3, STRING s4, STRING s5}
+        );
+
+    SHARED Large_Strings_Profile := DataPatterns.Profile(NOFOLD(Large_Strings), features := 'best_ecl_types');
+
+    EXPORT Test_Large_Strings_Profile :=
+        [
+            ASSERT(ValueForAttr(Large_Strings_Profile, 's1', best_attribute_type) = 'string4'),
+            ASSERT(ValueForAttr(Large_Strings_Profile, 's2', best_attribute_type) = 'string'),
+            ASSERT(ValueForAttr(Large_Strings_Profile, 's3', best_attribute_type) = 'string500'),
+            ASSERT(ValueForAttr(Large_Strings_Profile, 's4', best_attribute_type) = 'string'),
+            ASSERT(ValueForAttr(Large_Strings_Profile, 's5', best_attribute_type) = 'integer3'),
+            ASSERT(TRUE)
+        ];
 END;
