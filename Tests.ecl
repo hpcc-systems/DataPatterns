@@ -535,4 +535,51 @@ EXPORT Tests := MODULE
             ASSERT(ValueForAttr(Large_Strings_Profile, 's5', best_attribute_type) = 'integer3'),
             ASSERT(TRUE)
         ];
+
+    //--------------------------------------------------------------------------
+    // Test strings fields containing numerics with leading zeros (issue 42)
+    //--------------------------------------------------------------------------
+
+    SHARED SetOf_Types := DATASET
+        (
+            [
+                {1, [1,2,3,4]},
+                {100, [9,8]},
+                {200, [4,4,4,4,4,4,4,4,4,4,4]},
+                {300, []},
+                {150, [5,6]}
+            ],
+            {
+                UNSIGNED2           n,
+                SET OF UNSIGNED2    my_set
+            }
+        );
+
+    SHARED SetOf_Types_Profile := DataPatterns.Profile(NOFOLD(SetOf_Types));
+
+    EXPORT Test_SetOf_Types_Profile :=
+        [
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].attribute = 'my_set'),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].rec_count = 5),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].given_attribute_type = 'set of unsigned2'),
+            ASSERT((DECIMAL9_6)SetOf_Types_Profile(attribute = 'my_set')[1].fill_rate = (DECIMAL9_6)80),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].fill_count = 4),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].cardinality = 4),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].best_attribute_type = 'set of unsigned2'),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].min_length = 2),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].max_length = 11),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].ave_length = 4),
+            ASSERT(COUNT(SetOf_Types_Profile(attribute = 'my_set')[1].popular_patterns) = 3),
+            ASSERT(COUNT(SetOf_Types_Profile(attribute = 'my_set')[1].rare_patterns) = 0),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].is_numeric = FALSE),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_min = 0),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_max = 0),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_mean = 0),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_std_dev = 0),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_lower_quartile = 0),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_median = 0),
+            ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_upper_quartile = 0),
+            ASSERT(COUNT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_correlations) = 0),
+            ASSERT(TRUE)
+        ];
 END;

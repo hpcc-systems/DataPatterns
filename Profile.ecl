@@ -5,7 +5,7 @@
  *      attribute               The name of the attribute
  *      given_attribute_type    The ECL type of the attribute as it was defined
  *                              in the input dataset
- *      best_attribute_type     And ECL data type that both allows all values
+ *      best_attribute_type     An ECL data type that both allows all values
  *                              in the input dataset and consumes the least
  *                              amount of memory
  *      rec_count               The number of records analyzed in the dataset;
@@ -13,15 +13,16 @@
  *                              records, if the optional sampleSize argument
  *                              was provided with a value less than 100
  *      fill_count              The number of rec_count records containing
- *                              non-nil values
- *      fill_rate               The percentage of rec_count records containing
  *                              non-nil values; a 'nil value' is an empty
- *                              string or a numeric zero; note that BOOLEAN
- *                              attributes are always counted as filled,
- *                              regardless of their value; also, fixed-length
- *                              DATA attributes (e.g. DATA10) are also counted
- *                              as filled, given their typical function of
- *                              holding data blobs
+ *                              string, a numeric zero, or an empty SET; note
+ *                              that BOOLEAN attributes are always counted as
+ *                              filled, regardless of their value; also,
+ *                              fixed-length DATA attributes (e.g. DATA10) are
+ *                              also counted as filled, given their typical
+ *                              function of holding data blobs
+ *      fill_rate               The percentage of rec_count records containing
+ *                              non-nil values; this is basically
+ *                              fill_count / rec_count * 100
  *      cardinality             The number of unique, non-nil values within
  *                              the attribute
  *      cardinality_breakdown   For those attributes with a low number of
@@ -37,17 +38,23 @@
  *                              modes will be shown; note that string values
  *                              longer than the maxPatternLen argument will
  *                              be truncated
- *      min_length              The shortest length of a value when expressed
+ *      min_length              For SET datatypes, the fewest number of elements
+ *                              found in the set; for other data types, the
+ *                              shortest length of a value when expressed
  *                              as a string; null values are ignored
- *      max_length              The longest length of a value when expressed
- *                              as a string
- *      ave_length              The average length of a value when expressed
- *                              as a string
+ *      max_length              For SET datatypes, the largest number of elements
+ *                              found in the set; for other data types, the
+ *                              longest length of a value when expressed
+ *                              as a string; null values are ignored
+ *      ave_length              For SET datatypes, the average number of elements
+ *                              found in the set; for other data types, the
+ *                              average length of a value when expressed
+ *                              as a string; null values are ignored
  *      popular_patterns        The most common patterns of values; see below
  *      rare_patterns           The least common patterns of values; see below
  *      is_numeric              Boolean indicating if the original attribute
- *                              was numeric and therefore whether or not
- *                              the numeric_xxxx output fields will be
+ *                              was a numeric scalar and therefore whether or
+ *                              not the numeric_xxxx output fields will be
  *                              populated with actual values; if this value
  *                              is FALSE then all numeric_xxxx output values
  *                              should be ignored
@@ -111,13 +118,8 @@
  *
  * All other characters are left as-is in the pattern.
  *
- * Child datasets and SET data types (such as SET OF INTEGER) are not
- * supported.  If the input dataset cannot be processed then an error will be
- * produced at compile time.
- *
- * This function works best when the incoming dataset contains attributes that
- * have precise data types (e.g. UNSIGNED4 data types instead of numbers
- * stored in a STRING data type).
+ * Child datasetsare not supported.  If the input dataset cannot be processed
+ * for any reason then an error will be produced at compile time.
  *
  * Function parameters:
  *
@@ -217,12 +219,14 @@ EXPORT Profile(inFile,
     // Clamp lcbLimit to 0..500
     LOCAL lowCardinalityThreshold := MIN(MAX(lcbLimit, 0), 500);
 
-    // Validate that attribute is okay for us to process (not a SET OF XXX
-    // data type, and that either there is no explicit attribute list or the
-    // name is in the list)
-    LOCAL CanProcessAttribute(STRING attrName, STRING attrType) := (attrType[..7] != 'set of ' AND (trimmedFieldList = '' OR REGEXFIND('(^|,)' + attrName + '(,|$)', trimmedFieldList, NOCASE)));
+    // Validate that attribute is okay for us to process (there is no explicit
+    // attribute list or the name is in the list)
+    LOCAL CanProcessAttribute(STRING attrName) := (trimmedFieldList = '' OR REGEXFIND('(^|,)' + attrName + '(,|$)', trimmedFieldList, NOCASE));
 
-    // Helper function to convert a full field name into somthing we
+    // Test an attribute type to see if is a SET OF <something>
+    LOCAL IsSetType(STRING attrType) := (attrType[..7] = 'set of ');
+
+    // Helper function to convert a full field name into something we
     // can reference as an ECL attribute
     LOCAL MakeAttr(STRING attr) := REGEXREPLACE('\\.', attr, '_');
 
@@ -284,7 +288,7 @@ EXPORT Profile(inFile,
                 #END
                 #SET(fieldStack, %'fieldStack'%[2..])
             #ELSEIF(%recLevel% = 0)
-                #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%, %'@type'%))
+                #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%))
                     #SET(attributeSize, MAX(%attributeSize%, LENGTH(%'namePrefix'% + %'@name'%)))
 
                     #IF(%needsDelim% = 1)
@@ -293,25 +297,27 @@ EXPORT Profile(inFile,
                     #APPEND(explicitFields, %'namePrefix'% + %'@name'%)
                     #SET(needsDelim, 1)
 
-                    #IF(REGEXFIND('(string)|(data)|(utf)', %'@type'%))
-                        #IF(%@size% < 0)
-                            #SET(foundMaxPatternLen, MAX(maxPatternLen, %foundMaxPatternLen%))
-                        #ELSE
-                            #SET(foundMaxPatternLen, MIN(MAX(%@size%, %foundMaxPatternLen%), maxPatternLen))
+                    #IF(NOT IsSetType(%'@type'%))
+                        #IF(REGEXFIND('(string)|(data)|(utf)', %'@type'%))
+                            #IF(%@size% < 0)
+                                #SET(foundMaxPatternLen, MAX(maxPatternLen, %foundMaxPatternLen%))
+                            #ELSE
+                                #SET(foundMaxPatternLen, MIN(MAX(%@size%, %foundMaxPatternLen%), maxPatternLen))
+                            #END
+                        #ELSEIF(REGEXFIND('unicode', %'@type'%))
+                            // Unicode is UTF-16 so the size reflects two bytes per character
+                            #IF(%@size% < 0)
+                                #SET(foundMaxPatternLen, MAX(maxPatternLen, %foundMaxPatternLen%))
+                            #ELSE
+                                #SET(foundMaxPatternLen, MIN(MAX(%@size% DIV 2 + 1, %foundMaxPatternLen%), maxPatternLen))
+                            #END
+                        #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
+                            #IF(%needsDelim2% = 1)
+                                #APPEND(numericFields, ',')
+                            #END
+                            #APPEND(numericFields, %'namePrefix'% + %'@name'%)
+                            #SET(needsDelim2, 1)
                         #END
-                    #ELSEIF(REGEXFIND('unicode', %'@type'%))
-                        // Unicode is UTF-16 so the size reflects two bytes per character
-                        #IF(%@size% < 0)
-                            #SET(foundMaxPatternLen, MAX(maxPatternLen, %foundMaxPatternLen%))
-                        #ELSE
-                            #SET(foundMaxPatternLen, MIN(MAX(%@size% DIV 2 + 1, %foundMaxPatternLen%), maxPatternLen))
-                        #END
-                    #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
-                        #IF(%needsDelim2% = 1)
-                            #APPEND(numericFields, ',')
-                        #END
-                        #APPEND(numericFields, %'namePrefix'% + %'@name'%)
-                        #SET(needsDelim2, 1)
                     #END
                 #END
             #END
@@ -334,12 +340,7 @@ EXPORT Profile(inFile,
     LOCAL ungroupedInFile := UNGROUP(inFile);
 
     // Clamp the sample size to something reasonable
-    LOCAL clampedSampleSize := MAP
-        (
-            (INTEGER)sampleSize < 1     =>  1,
-            (INTEGER)sampleSize > 100   =>  100,
-            (INTEGER)sampleSize
-        );
+    LOCAL clampedSampleSize := MAX(1, MIN(100, (INTEGER)sampleSize));
 
     // Create a sample dataset if needed
     LOCAL sampledData := IF
@@ -406,7 +407,7 @@ EXPORT Profile(inFile,
                     #END
                     #SET(fieldStack, %'fieldStack'%[2..])
                 #ELSEIF(%recLevel% = 0)
-                    #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%, %'@type'%))
+                    #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%))
                         #SET(fieldCount, %fieldCount% + 1)
                         #IF(%needsDelim% = 1) + #END
 
@@ -419,7 +420,9 @@ EXPORT Profile(inFile,
                                             Attribute_t     attribute := %'namePrefix'% + %'@name'%,
                                             AttributeType_t given_attribute_type := %'@ecltype'%,
                                             StringValue_t   string_value :=
-                                                                #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', %'@type'%))
+                                                                #IF(IsSetType(%'@type'%))
+                                                                    (StringValue_t)Std.Str.CombineWords((SET OF STRING)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%), ', ')
+                                                                #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', %'@type'%))
                                                                     (StringValue_t)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%)
                                                                 #ELSEIF(REGEXFIND('string', %'@type'%))
                                                                     TrimmedStr(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))
@@ -428,7 +431,9 @@ EXPORT Profile(inFile,
                                                                 #END,
                                             UNSIGNED4       value_count := COUNT(GROUP),
                                             DataPattern_t   data_pattern :=
-                                                                #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
+                                                                #IF(IsSetType(%'@type'%))
+                                                                    MapAllStr(TrimmedStr(Std.Str.CombineWords((SET OF STRING)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%), ', '))[..%foundMaxPatternLen%])
+                                                                #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
                                                                     MapAllStr((STRING)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))
                                                                 #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
                                                                     #IF(%@size% < 0 OR (%@size% DIV 2 + 1) > %foundMaxPatternLen%)
@@ -448,7 +453,9 @@ EXPORT Profile(inFile,
                                                                     MapAllStr(TrimmedStr((STRING)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
                                                                 #END,
                                             UNSIGNED4       data_length :=
-                                                                #IF(REGEXFIND('(unicode)|(utf)', %'@type'%))
+                                                                #IF(IsSetType(%'@type'%))
+                                                                    COUNT(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))
+                                                                #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
                                                                     LENGTH(TrimmedUni((UNICODE)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%)))
                                                                 #ELSEIF(REGEXFIND('string', %'@type'%))
                                                                     LENGTH(TrimmedStr(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%)))
@@ -458,7 +465,9 @@ EXPORT Profile(inFile,
                                                                     LENGTH((STRING)distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))
                                                                 #END,
                                             BOOLEAN         is_filled :=
-                                                                #IF(REGEXFIND('(unicode)|(utf)', %'@type'%))
+                                                                #IF(IsSetType(%'@type'%))
+                                                                    COUNT(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%)) > 0
+                                                                #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
                                                                     LENGTH(TrimmedUni(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))) > 0
                                                                 #ELSEIF(REGEXFIND('string', %'@type'%))
                                                                     LENGTH(TrimmedStr(distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%))) > 0
@@ -470,7 +479,9 @@ EXPORT Profile(inFile,
                                                                     distributedInFile.#EXPAND(%'namePrefix'% + %'@name'%) != 0
                                                                 #END,
                                             BOOLEAN         is_number :=
-                                                                #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
+                                                                #IF(IsSetType(%'@type'%))
+                                                                    FALSE
+                                                                #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
                                                                     TRUE
                                                                 #ELSE
                                                                     FALSE
@@ -527,6 +538,7 @@ EXPORT Profile(inFile,
 
         bestType := MAP
             (
+                IsSetType(attributeType)                                                    =>  DataTypeEnum.AsIs,
                 REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', attributeType) =>  DataTypeEnum.AsIs,
                 hasLeadingZeros                                                             =>  DataTypeEnum.AsIs,
                 stringWithNumbersType
@@ -599,6 +611,7 @@ EXPORT Profile(inFile,
                     AttributeTypeRec,
                     SELF.best_attribute_type := MAP
                         (
+                            IsSetType(LEFT.given_attribute_type)                                                    =>  LEFT.given_attribute_type,
                             REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', LEFT.given_attribute_type) =>  LEFT.given_attribute_type,
                             REGEXFIND('data', LEFT.given_attribute_type)                                            =>  'data' + IF(LEFT.data_length > 0 AND (LEFT.data_length < (LEFT.min_data_length * 1000)), (STRING)LEFT.data_length, ''),
                             (LEFT.type_flag & DataTypeEnum.UnsignedInteger) != 0                                    =>  'unsigned' + Len2Size(LEFT.data_length),
@@ -639,7 +652,7 @@ EXPORT Profile(inFile,
                 #END
                 #SET(fieldStack, %'fieldStack'%[2..]);
             #ELSEIF(%recLevel% = 0)
-                #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%, %'@type'%))
+                #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%))
                     // Note that we create explicit attributes here for all
                     // top-level attributes in the dataset that we're
                     // processing, even if they are not numeric datatypes
@@ -933,12 +946,14 @@ EXPORT Profile(inFile,
                             #END
                             #SET(fieldStack, %'fieldStack'%[2..])
                         #ELSEIF(%recLevel% = 0)
-                            #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%, %'@type'%))
+                            #IF(CanProcessAttribute(%'namePrefix'% + %'@name'%))
                                 #IF(%needsDelim% = 1) , #END
 
                                 {
                                     %'namePrefix'% + %'@name'%,
-                                    #IF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
+                                    #IF(IsSetType(%'@type'%))
+                                        FALSE,
+                                    #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
                                         TRUE,
                                     #ELSE
                                         FALSE,

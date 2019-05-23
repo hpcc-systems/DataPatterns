@@ -60,6 +60,7 @@ level, such as within your "My Files" folder.
 |1.4.0|Automatically include improved visual results of Profile, including data distribution graphs (within workunit's Resources tab)|
 |1.4.1|Regression: Fix self-tests that were failing due to changes in v1.3.4|
 |1.4.2|String fields containing all numerics with leading zeros are now marked as string in best\_attribute\_type; string fields where the length varies by more than three orders of magnitude are now marked as string in best\_attribute\_type|
+|1.5.0|Add support for SET OF data types|
 
 <a name="profile"></a>
 ### Profile
@@ -81,15 +82,16 @@ Documentation as pulled from the beginning of Profile.ecl:
                                  records, if the optional sampleSize argument
                                  was provided with a value less than 100
          fill_count              The number of rec_count records containing
-                                 non-nil values
-         fill_rate               The percentage of rec_count records containing
                                  non-nil values; a 'nil value' is an empty
-                                 string or a numeric zero; note that BOOLEAN
-                                 attributes are always counted as filled,
-                                 regardless of their value; also, fixed-length
-                                 DATA attributes (e.g. DATA10) are also counted
-                                 as filled, given their typical function of
-                                 holding data blobs
+                                 string, a numeric zero, or an empty SET; note
+                                 that BOOLEAN attributes are always counted as
+                                 filled, regardless of their value; also,
+                                 fixed-length DATA attributes (e.g. DATA10) are
+                                 also counted as filled, given their typical
+                                 function of holding data blobs
+         fill_rate               The percentage of rec_count records containing
+                                 non-nil values; this is basically
+                                 fill_count / rec_count * 100
          cardinality             The number of unique, non-nil values within
                                  the attribute
          cardinality_breakdown   For those attributes with a low number of
@@ -105,17 +107,22 @@ Documentation as pulled from the beginning of Profile.ecl:
                                  modes will be shown; note that string values
                                  longer than the maxPatternLen argument will
                                  be truncated
-         min_length              The shortest length of a value when expressed
+         min_length              For SET datatypes, the fewest number of elements
+                                 found in the set; for other data types, the
+                                 shortest length of a value when expressed
                                  as a string; null values are ignored
-         max_length              The longest length of a value when expressed
-                                 as a string
-         ave_length              The average length of a value when expressed
-                                 as a string
+         max_length              For SET datatypes, the largest number of elements
+                                 found in the set; for other data types, the
+                                 longest length of a value when expressed
+                                 as a string; null values are ignored
+         ave_length              For SET datatypes, the average number of elements
+                                 found in the set; for other data types, the
+                                 average length of a value when expressed
          popular_patterns        The most common patterns of values; see below
          rare_patterns           The least common patterns of values; see below
          is_numeric              Boolean indicating if the original attribute
-                                 was numeric and therefore whether or not
-                                 the numeric_xxxx output fields will be
+                                 was a numeric scalar and therefore whether or
+                                 not the numeric_xxxx output fields will be
                                  populated with actual values; if this value
                                  is FALSE then all numeric_xxxx output values
                                  should be ignored
@@ -179,13 +186,8 @@ Documentation as pulled from the beginning of Profile.ecl:
 
     All other characters are left as-is in the pattern.
 
-    Child datasets and SET data types (such as SET OF INTEGER) are not
-    supported.  If the input dataset cannot be processed then an error will be
-    produced at compile time.
-
-    This function works best when the incoming dataset contains attributes that
-    have precise data types (e.g. UNSIGNED4 data types instead of numbers
-    stored in a STRING data type).
+    Child datasets are not supported.  If the input dataset cannot be processed
+    for any reason then an error will be produced at compile time.
 
     Function parameters:
 
