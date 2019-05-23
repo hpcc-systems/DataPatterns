@@ -229,12 +229,12 @@ EXPORT Profile(inFile,
     // Useful functions for pattern mapping
     LOCAL MapUpperCharStr(STRING s) := REGEXREPLACE('[[:upper:]]', s, 'A');
     LOCAL MapLowerCharStr(STRING s) := REGEXREPLACE('[[:lower:]]', s, 'a');
-    LOCAL MapDigitStr(STRING s) := REGEXREPLACE('[[:digit:]]', s, '9');
+    LOCAL MapDigitStr(STRING s) := REGEXREPLACE('[1-9]', s, '9'); // Leave '0' as-is and replace with '9' later
     LOCAL MapAllStr(STRING s) := MapDigitStr(MapLowerCharStr(MapUpperCharStr(s)));
 
     LOCAL MapUpperCharUni(UNICODE s) := REGEXREPLACE(u'[[:upper:]]', s, u'A');
     LOCAL MapLowerCharUni(UNICODE s) := REGEXREPLACE(u'[[:lower:]]', s, u'a');
-    LOCAL MapDigitUni(UNICODE s) := REGEXREPLACE(u'[[:digit:]]', s, u'9');
+    LOCAL MapDigitUni(UNICODE s) := REGEXREPLACE(u'[1-9]', s, u'9'); // Leave '0' as-is and replace with '9' later
     LOCAL MapAllUni(UNICODE s) := (STRING)MapDigitUni(MapLowerCharUni(MapUpperCharUni(s)));
 
     LOCAL TrimmedStr(STRING s) := TRIM(s, LEFT, RIGHT);
@@ -507,14 +507,15 @@ EXPORT Profile(inFile,
                 ExpNotation = 8
         );
 
-    LOCAL DataTypeEnum BestTypeFlag(STRING dataPattern) := FUNCTION
-        isSignedInteger := REGEXFIND('^\\-9{1,19}$', dataPattern);
-        isShortUnsignedInteger := REGEXFIND('^9{1,19}$', dataPattern);
-        isUnsignedInteger := REGEXFIND('^\\+?9{1,20}$', dataPattern);
-        isFloatingPoint := REGEXFIND('^(\\-|\\+)?9{0,15}\\.9{1,15}$', dataPattern);
-        isExpNotation := REGEXFIND('^(\\-|\\+)?9\\.9{1,6}a\\-9{1,3}$', dataPattern, NOCASE);
+    LOCAL DataTypeEnum BestTypeFlag(STRING dataPattern, AttributeType_t attributeType) := FUNCTION
+        hasLeadingZeros := REGEXFIND('^0+', dataPattern);
+        isSignedInteger := REGEXFIND('^\\-[09]{1,19}$', dataPattern);
+        isShortUnsignedInteger := REGEXFIND('^[09]{1,19}$', dataPattern);
+        isUnsignedInteger := REGEXFIND('^\\+?[09]{1,20}$', dataPattern);
+        isFloatingPoint := REGEXFIND('^(\\-|\\+)?[09]{0,15}\\.[09]{1,15}$', dataPattern);
+        isExpNotation := REGEXFIND('^(\\-|\\+)?[09]\\.[09]{1,6}[aA]\\-[09]{1,3}$', dataPattern);
 
-        RETURN MAP
+        stringWithNumbersType := MAP
             (
                 isSignedInteger         =>  DataTypeEnum.SignedInteger | DataTypeEnum.FloatingPoint | DataTypeEnum.ExpNotation,
                 isShortUnsignedInteger  =>  DataTypeEnum.SignedInteger | DataTypeEnum.UnsignedInteger | DataTypeEnum.FloatingPoint | DataTypeEnum.ExpNotation,
@@ -523,6 +524,15 @@ EXPORT Profile(inFile,
                 isExpNotation           =>  DataTypeEnum.ExpNotation,
                 DataTypeEnum.AsIs
             );
+
+        bestType := MAP
+            (
+                REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', attributeType) =>  DataTypeEnum.AsIs,
+                hasLeadingZeros                                                             =>  DataTypeEnum.AsIs,
+                stringWithNumbersType
+            );
+
+        RETURN bestType;
     END;
 
     // Estimate integer size from readable data length
@@ -536,12 +546,12 @@ EXPORT Profile(inFile,
                 given_attribute_type,
                 data_pattern,
                 data_length,
-                DataTypeEnum    type_flag := BestTypeFlag(TRIM(data_pattern))
+                DataTypeEnum    type_flag := BestTypeFlag(TRIM(data_pattern), given_attribute_type)
 
             },
             attribute, given_attribute_type, data_pattern, data_length,
             MERGE
-        );
+        ) : ONWARNING(2168, IGNORE);
 
     LOCAL attributesWithTypeFlagsSummary := AGGREGATE
         (
@@ -824,9 +834,20 @@ EXPORT Profile(inFile,
 
     // Count data patterns used per attribute; extract the most common and
     // most rare, taking care to not allow the two to overlap
+    LOCAL dataPatternStats0 := PROJECT
+        (
+            filledDataInfo,
+            TRANSFORM
+                (
+                    RECORDOF(LEFT),
+                    SELF.data_pattern := Std.Str.FindReplace(LEFT.data_pattern, '0', '9'),
+                    SELF := LEFT
+                )
+        );
+
     LOCAL dataPatternStats := TABLE
         (
-            DISTRIBUTE(filledDataInfo, HASH32(attribute)),
+            DISTRIBUTE(dataPatternStats0, HASH32(attribute)),
             {
                 attribute,
                 data_pattern,
