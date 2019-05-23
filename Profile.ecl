@@ -546,12 +546,20 @@ EXPORT Profile(inFile,
                 given_attribute_type,
                 data_pattern,
                 data_length,
-                DataTypeEnum    type_flag := BestTypeFlag(TRIM(data_pattern), given_attribute_type)
+                DataTypeEnum    type_flag := BestTypeFlag(TRIM(data_pattern), given_attribute_type),
+                UNSIGNED4       min_data_length := 0 // will be populated within attributesWithTypeFlagsSummary
 
             },
             attribute, given_attribute_type, data_pattern, data_length,
             MERGE
-        ) : ONWARNING(2168, IGNORE);
+        );
+
+    LOCAL MinNotZero(UNSIGNED4 n1, UNSIGNED4 n2) := MAP
+        (
+            n1 = 0  =>  n2,
+            n2 = 0  =>  n1,
+            MIN(n1, n2)
+        );
 
     LOCAL attributesWithTypeFlagsSummary := AGGREGATE
         (
@@ -560,7 +568,8 @@ EXPORT Profile(inFile,
             TRANSFORM
                 (
                     RECORDOF(attributeTypePatterns),
-                    SELF.data_length := MAX(LEFT.data_length, RIGHT.data_length) ,
+                    SELF.data_length := MAX(LEFT.data_length, RIGHT.data_length),
+                    SELF.min_data_length := MinNotZero(LEFT.data_length, RIGHT.data_length),
                     SELF.type_flag := IF(TRIM(RIGHT.attribute) != '', LEFT.type_flag & RIGHT.type_flag, LEFT.type_flag),
                     SELF := LEFT
                 ),
@@ -568,6 +577,7 @@ EXPORT Profile(inFile,
                 (
                     RECORDOF(attributeTypePatterns),
                     SELF.data_length := MAX(RIGHT1.data_length, RIGHT2.data_length),
+                    SELF.min_data_length := MinNotZero(RIGHT1.data_length, RIGHT2.data_length),
                     SELF.type_flag := RIGHT1.type_flag & RIGHT2.type_flag,
                     SELF := RIGHT1
                 ),
@@ -590,13 +600,13 @@ EXPORT Profile(inFile,
                     SELF.best_attribute_type := MAP
                         (
                             REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', LEFT.given_attribute_type) =>  LEFT.given_attribute_type,
-                            REGEXFIND('data', LEFT.given_attribute_type)                                            =>  'data' + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, ''),
+                            REGEXFIND('data', LEFT.given_attribute_type)                                            =>  'data' + IF(LEFT.data_length > 0 AND (LEFT.data_length < (LEFT.min_data_length * 1000)), (STRING)LEFT.data_length, ''),
                             (LEFT.type_flag & DataTypeEnum.UnsignedInteger) != 0                                    =>  'unsigned' + Len2Size(LEFT.data_length),
                             (LEFT.type_flag & DataTypeEnum.SignedInteger) != 0                                      =>  'integer' + Len2Size(LEFT.data_length),
                             (LEFT.type_flag & DataTypeEnum.FloatingPoint) != 0                                      =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
                             (LEFT.type_flag & DataTypeEnum.ExpNotation) != 0                                        =>  'real8',
                             REGEXFIND('utf', LEFT.given_attribute_type)                                             =>  LEFT.given_attribute_type,
-                            REGEXREPLACE('\\d+$', TRIM(LEFT.given_attribute_type), '') + IF(LEFT.data_length > 0, (STRING)LEFT.data_length, '')
+                            REGEXREPLACE('\\d+$', TRIM(LEFT.given_attribute_type), '') + IF(LEFT.data_length > 0 AND (LEFT.data_length < (LEFT.min_data_length * 1000)), (STRING)LEFT.data_length, '')
                         ),
                     SELF := LEFT
                 )
