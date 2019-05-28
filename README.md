@@ -60,7 +60,7 @@ level, such as within your "My Files" folder.
 |1.4.0|Automatically include improved visual results of Profile, including data distribution graphs (within workunit's Resources tab)|
 |1.4.1|Regression: Fix self-tests that were failing due to changes in v1.3.4|
 |1.4.2|String fields containing all numerics with leading zeros are now marked as string in best\_attribute\_type; string fields where the length varies by more than three orders of magnitude are now marked as string in best\_attribute\_type|
-|1.5.0|Add support for SET OF data types|
+|1.5.0|Add support for SET OF data types and child datasets|
 
 <a name="profile"></a>
 ### Profile
@@ -186,18 +186,16 @@ Documentation as pulled from the beginning of Profile.ecl:
 
     All other characters are left as-is in the pattern.
 
-    Child datasets are not supported.  If the input dataset cannot be processed
-    for any reason then an error will be produced at compile time.
-
     Function parameters:
 
-    @param   inFile          The dataset to process; REQUIRED
+    @param   inFile          The dataset to process; this could be a child
+                             dataset (e.g. inFile.childDS); REQUIRED
     @param   fieldListStr    A string containing a comma-delimited list of
-                             attribute names to process; use an empty string to
-                             process all attributes in inFile; attributes named
-                             here that are not found in the top level of inFile
-                             will be ignored; OPTIONAL, defaults to an
-                             empty string
+                             attribute names to process; note that attributes
+                             listed here must be scalar datatypes (not child
+                             records or child datasets); use an empty string to
+                             process all attributes in inFile; OPTIONAL,
+                             defaults to an empty string
     @param   maxPatterns     The maximum number of patterns (both popular and
                              rare) to return for each attribute; OPTIONAL,
                              defaults to 100
@@ -327,12 +325,6 @@ dataset will be examined. You can override this behavior by providing a
 percentage of the dataset to examine (1-100) as the second argument.  This is
 useful if you are checking a very large file and are confident that a sample
 will provide correct results.
-
-There is an important limitation in this function:  Child datasets and SET
-data types are ignored entirely (this comes from the fact that this
-function calls the Profile() function, and that function ignores those items).
-All other top-level attributes are returned, though, so you can edit the
-returned string and insert anything that is missing.
 
 Sample call:
 
