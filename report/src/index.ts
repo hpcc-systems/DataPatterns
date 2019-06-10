@@ -2,6 +2,7 @@ import { Widget } from "@hpcc-js/common";
 import { Result, Workunit, WUInfo } from "@hpcc-js/comms";
 import { Grid } from "@hpcc-js/layout";
 import { Html } from "@hpcc-js/other";
+import { DockPanel } from "@hpcc-js/phosphor";
 import { BreakdownTable, StyledTable } from "@hpcc-js/html";
 import { StatChart } from "./statChart";
 
@@ -28,28 +29,79 @@ const config = {
     fillRateRedThreshold: 33
 };
 
+export class ReportTabs extends DockPanel {
+    _wu: Workunit;
+    _results: any = [];
+    constructor(private _espUrl: string) {
+        super();
+        this.hideSingleTabs(true);
+        const urlParts = this._espUrl.split("/WsWorkunits/res/");
+        const baseUrl = urlParts[0];
+        const urlParts2 = urlParts[1].split("/report/res/index.html");
+        const wuid = urlParts2[0];
+        this._wu = Workunit.attach({ baseUrl }, wuid);
+    }
+    render(callback?: (w: Widget) => void): this {
+        this._wu.fetchResults().then(results => {
+            if (this._results.length !== results.length) {
+                this._results = results;
+                results.filter(isProfileResult).forEach((result, i) => {
+                    let prevWidget;
+                    result.fetchRows()
+                        .then(rows => {
+                            const r = new Report(rows);
+                            let tabName = 'Report ' + i;
+                            if (result.Name) {
+                                tabName = result.Name;
+                            }
+                            if (i === 0) {
+                                this.addWidget(r, tabName);
+                            } else {
+                                this.addWidget(r, tabName, "tab-after", prevWidget);
+                            }
+                            prevWidget = r;
+                            super.render(w => {
+                                if (callback) {
+                                    callback(this as any);
+                                }
+                            });
+                        })
+                        ;
+                })
+            } else {
+                super.render(w => {
+                    if (callback) {
+                        callback(this as any);
+                    }
+                });
+            }
+        });
+        return this;
+    }
+}
+export interface ReportTabs {
+    hideSingleTabs(): boolean;
+    hideSingleTabs(_: boolean): this;
+    addWidget(_: any, _2?: string, _3?: string, _4?: any): this;
+}
+
 export class Report extends Grid {
 
-    _wu: Workunit;
     _data: any[];
     _fixedHeight?: number;
     _showBreakdownColumn = true;
     _showPopularPatternsColumn = true;
     _showQuartileColumn = true;
 
-    constructor(private _espUrl: string) {
+    constructor(data) {
         super();
+        this._data = data;
         this
             .gutter(12)
             .surfaceShadow(false)
             .surfacePadding("0")
             .surfaceBorderWidth(0)
             ;
-        const urlParts = this._espUrl.split("/WsWorkunits/res/");
-        const baseUrl = urlParts[0];
-        const urlParts2 = urlParts[1].split("/report/res/index.html");
-        const wuid = urlParts2[0];
-        this._wu = Workunit.attach({ baseUrl }, wuid);
     }
 
     enter(domNode, element) {
@@ -315,30 +367,6 @@ export class Report extends Grid {
         return retVal;
     }
 
-    render(callback?: (w: Widget) => void): this {
-
-        this._wu.fetchResults().then(results => {
-            for (const result of results) {
-                if (isProfileResult(result)) {
-                    return result;
-                }
-            }
-        }).then((result?: Result) => {
-            if (result) {
-                return result.fetchRows();
-            }
-            return [];
-        }).then(rows => {
-            this._data = rows;
-            super.render(w => {
-                if (callback) {
-                    callback(this);
-                }
-            });
-        });
-        return this;
-    }
-
     calcStatsWidgetDataColumnWidth() {
         let ret = 0;
         this._data.forEach(row => {
@@ -355,7 +383,6 @@ export class Report extends Grid {
                 ret = _w;
             }
         });
-        console.log('ret', ret);
         return ret;
     }
 }
