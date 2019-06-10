@@ -11,8 +11,8 @@ body {
 
 .report-col-count-2 .ddCell:nth-child(4n+3),
 .report-col-count-2 .ddCell:nth-child(4n+4),
-.report-col-count-3 .ddCell:nth-child(6n+6),
 .report-col-count-3 .ddCell:nth-child(6n+4),
+.report-col-count-3 .ddCell:nth-child(6n+5),
 .report-col-count-3 .ddCell:nth-child(6n+6),
 .report-col-count-4 .ddCell:nth-child(8n+5),
 .report-col-count-4 .ddCell:nth-child(8n+6),
