@@ -84,23 +84,31 @@ EXPORT ProfileFromPath(path,
     IMPORT DataPatterns;
     IMPORT Std;
 
+    // Attribute naming note:  In order to reduce symbol collisions with calling
+    // code, all LOCAL attributes are prefixed with two underscore characters;
+    // normally, a #UNIQUENAME would be used instead, but there is apparently
+    // a problem with using that for ECL attributes when another function
+    // macro is called (namely, Profile); using double underscores is not an
+    // optimal solution but the chance of symbol collision should at least be
+    // reduced
+
     // Function for gathering metadata associated with a file path
-    LOCAL GetFileAttribute(STRING attr) := NOTHOR(Std.File.GetLogicalFileAttribute(path, attr));
+    LOCAL __GetFileAttribute(STRING attr) := NOTHOR(Std.File.GetLogicalFileAttribute(path, attr));
 
     // Gather certain metadata about the given path
-    LOCAL fileKind := GetFileAttribute('kind');
-    LOCAL headerLineCnt := (UNSIGNED2)GetFileAttribute('headerLength');
+    LOCAL __fileKind := __GetFileAttribute('kind');
+    LOCAL __headerLineCnt := (UNSIGNED2)__GetFileAttribute('headerLength');
 
     // Dataset declaration for a delimited file
-    LOCAL csvDataset := DATASET
+    LOCAL __csvDataset := DATASET
         (
             path,
             RECORDOF(path, LOOKUP),
-            CSV(HEADING(headerLineCnt)) // other settings will default to metadata values
+            CSV(HEADING(__headerLineCnt)) // other settings will default to metadata values
         );
 
     // Dataset declaration for a flat file
-    LOCAL flatDataset := DATASET
+    LOCAL __flatDataset := DATASET
         (
             path,
             RECORDOF(path, LOOKUP),
@@ -108,7 +116,7 @@ EXPORT ProfileFromPath(path,
         );
 
     // Function macro to properly scope execution of Profile()
-    LOCAL RunProfile(tempFile, _maxPatterns, _maxPatternLen, _features, _sampleSize, _lcb) := FUNCTIONMACRO
+    LOCAL __RunProfile(tempFile, _maxPatterns, _maxPatternLen, _features, _sampleSize, _lcb) := FUNCTIONMACRO
         RETURN DataPatterns.Profile
             (
                 tempFile,
@@ -124,36 +132,36 @@ EXPORT ProfileFromPath(path,
     // the record structure of the Profile result so it can be used to coerce
     // the individual Profile calls (and to provide an empty dataset in case
     // of an error)
-    LOCAL CommonResultRec := RECORDOF
+    LOCAL __CommonResultRec := RECORDOF
         (
-            RunProfile(DATASET([], {STRING s}), maxPatterns, maxPatternLen, features, sampleSize, lcbLimit)
+            __RunProfile(DATASET([], {STRING s}), maxPatterns, maxPatternLen, features, sampleSize, lcbLimit)
         );
 
-    // This is really a do-nothing routine, as the results of the RunProfile()
+    // This is really a do-nothing routine, as the results of the __RunProfile()
     // call will be in the appropriate format, but doing it this way keeps
     // the ECL compiler happy
-    LOCAL RunProfileAndCoerce(tempFile, _maxPatterns, _maxPatternLen, _features, _sampleSize, _lcb) := FUNCTIONMACRO
-        LOCAL theProfile := RunProfile(tempFile, _maxPatterns, _maxPatternLen, _features, _sampleSize, _lcb);
+    LOCAL __RunProfileAndCoerce(tempFile, _maxPatterns, _maxPatternLen, _features, _sampleSize, _lcb) := FUNCTIONMACRO
+        LOCAL __theProfile := __RunProfile(tempFile, _maxPatterns, _maxPatternLen, _features, _sampleSize, _lcb);
 
         RETURN PROJECT
             (
-                theProfile,
+                __theProfile,
                 TRANSFORM
                     (
-                        CommonResultRec,
+                        __CommonResultRec,
                         SELF := LEFT
                     )
             );
     ENDMACRO;
 
-    LOCAL resultProfile := CASE
+    LOCAL __resultProfile := CASE
         (
-            TRIM(fileKind, ALL),
-            'flat'  =>  RunProfileAndCoerce(flatDataset, maxPatterns, maxPatternLen, features, sampleSize, lcbLimit),
-            'csv'   =>  RunProfileAndCoerce(csvDataset, maxPatterns, maxPatternLen, features, sampleSize, lcbLimit),
-            ''      =>  RunProfileAndCoerce(csvDataset, maxPatterns, maxPatternLen, features, sampleSize, lcbLimit),
-            ERROR(DATASET([], CommonResultRec), 'Cannot run Profile on file of kind "' + fileKind + '"')
+            TRIM(__fileKind, ALL),
+            'flat'  =>  __RunProfileAndCoerce(__flatDataset, maxPatterns, maxPatternLen, features, sampleSize, lcbLimit),
+            'csv'   =>  __RunProfileAndCoerce(__csvDataset, maxPatterns, maxPatternLen, features, sampleSize, lcbLimit),
+            ''      =>  __RunProfileAndCoerce(__csvDataset, maxPatterns, maxPatternLen, features, sampleSize, lcbLimit),
+            ERROR(DATASET([], __CommonResultRec), 'Cannot run Profile on file of kind "' + __fileKind + '"')
         );
 
-    RETURN resultProfile;
+    RETURN __resultProfile;
 ENDMACRO;
