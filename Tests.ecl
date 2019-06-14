@@ -1,6 +1,16 @@
 IMPORT DataPatterns;
 IMPORT Std;
 
+/**
+ * This self-test module can be executed with the following code:
+ *
+ *  IMPORT DataPatterns;
+ *  EVALUATE(DataPatterns.Tests);
+ *
+ * WARNING: The tests may take a minute or two to complete when running on
+ *          on Thor.  Run the tests on hthor or ROXIE for better performance.
+ */
+
 EXPORT Tests := MODULE
 
     EXPORT Engine_Test := OUTPUT(Std.System.Job.Platform(), NAMED('Execution_Engine'));
