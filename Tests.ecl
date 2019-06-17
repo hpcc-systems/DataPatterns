@@ -129,7 +129,8 @@ EXPORT Tests := MODULE
     // Empty data detection
     //--------------------------------------------------------------------------
 
-    // Layout contains every ECL data type that Profile can deal with
+    // Layout contains every ECL data type that Profile can process (except for
+    // SET OF datatypes, child records, and child datasets)
     SHARED EmptyDataLayout := RECORD
         BOOLEAN f_boolean;
         INTEGER f_integer;
