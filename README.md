@@ -61,6 +61,7 @@ level, such as within your "My Files" folder.
 |1.4.1|Regression: Fix self-tests that were failing due to changes in v1.3.4|
 |1.4.2|String fields containing all numerics with leading zeros are now marked as string in best\_attribute\_type; string fields where the length varies by more than three orders of magnitude are now marked as string in best\_attribute\_type|
 |1.5.0|Add support for SET OF data types and child datasets|
+|1.5.1|Support for tabbed visual results of multiple profiles in a workunit's result; changes to avoid symbol collision in calling ECL code; visual report styling update|
 
 <a name="profile"></a>
 ### Profile
