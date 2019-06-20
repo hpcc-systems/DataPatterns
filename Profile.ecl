@@ -207,6 +207,8 @@ EXPORT Profile(inFile,
     #UNIQUENAME(numValue);                  // Extracted numeric value from a string
     #UNIQUENAME(nameValue);                 // Extracted string value from a string
 
+    IMPORT Std;
+
     //--------------------------------------------------------------------------
 
     // Remove all spaces from features list so we can parse it more easily
