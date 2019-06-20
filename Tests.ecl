@@ -1,6 +1,16 @@
 IMPORT DataPatterns;
 IMPORT Std;
 
+/**
+ * This self-test module can be executed with the following code:
+ *
+ *  IMPORT DataPatterns;
+ *  EVALUATE(DataPatterns.Tests);
+ *
+ * WARNING: The tests may take a minute or two to complete when running on
+ *          on Thor.  Run the tests on hthor or ROXIE for better performance.
+ */
+
 EXPORT Tests := MODULE
 
     EXPORT Engine_Test := OUTPUT(Std.System.Job.Platform(), NAMED('Execution_Engine'));
@@ -119,7 +129,8 @@ EXPORT Tests := MODULE
     // Empty data detection
     //--------------------------------------------------------------------------
 
-    // Layout contains every ECL data type that Profile can deal with
+    // Layout contains every ECL data type that Profile can process (except for
+    // SET OF datatypes, child records, and child datasets)
     SHARED EmptyDataLayout := RECORD
         BOOLEAN f_boolean;
         INTEGER f_integer;

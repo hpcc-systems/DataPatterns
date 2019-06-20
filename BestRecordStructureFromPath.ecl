@@ -50,23 +50,31 @@ EXPORT BestRecordStructureFromPath(path, sampling = 100, emitTransform = FALSE, 
     IMPORT DataPatterns;
     IMPORT Std;
 
+    // Attribute naming note:  In order to reduce symbol collisions with calling
+    // code, all LOCAL attributes are prefixed with two underscore characters;
+    // normally, a #UNIQUENAME would be used instead, but there is apparently
+    // a problem with using that for ECL attributes when another function
+    // macro is called (namely, BestRecordStructure); using double underscores
+    // is not an optimal solution but the chance of symbol collision should at
+    // least be reduced
+
     // Function for gathering metadata associated with a file path
-    LOCAL GetFileAttribute(STRING attr) := NOTHOR(Std.File.GetLogicalFileAttribute(path, attr));
+    LOCAL __GetFileAttribute(STRING attr) := NOTHOR(Std.File.GetLogicalFileAttribute(path, attr));
 
     // Gather certain metadata about the given path
-    LOCAL fileKind := GetFileAttribute('kind');
-    LOCAL headerLineCnt := (UNSIGNED2)GetFileAttribute('headerLength');
+    LOCAL __fileKind := __GetFileAttribute('kind');
+    LOCAL __headerLineCnt := (UNSIGNED2)__GetFileAttribute('headerLength');
 
     // Dataset declaration for a delimited file
-    LOCAL csvDataset := DATASET
+    LOCAL __csvDataset := DATASET
         (
             path,
             RECORDOF(path, LOOKUP),
-            CSV(HEADING(headerLineCnt)) // other settings will default to metadata values
+            CSV(HEADING(__headerLineCnt)) // other settings will default to metadata values
         );
 
     // Dataset declaration for a flat file
-    LOCAL flatDataset := DATASET
+    LOCAL __flatDataset := DATASET
         (
             path,
             RECORDOF(path, LOOKUP),
@@ -75,35 +83,35 @@ EXPORT BestRecordStructureFromPath(path, sampling = 100, emitTransform = FALSE, 
 
     // The returned value needs to be in a common format; the format here was
     // extracted from the DataPatterns.BestRecordStructure code
-    LOCAL CommonResultRec :=
+    LOCAL __CommonResultRec :=
         #IF((BOOLEAN)textOutput)
             {STRING result__html}
         #ELSE
             {STRING s}
         #END;
 
-    LOCAL RunBestRecordStructure(tempFile, _sampleSize, _emitTransform, _textOutput) := FUNCTIONMACRO
-        LOCAL theResult := DataPatterns.BestRecordStructure(tempFile, _sampleSize, _emitTransform, _textOutput);
+    LOCAL __RunBestRecordStructure(tempFile, _sampleSize, _emitTransform, _textOutput) := FUNCTIONMACRO
+        LOCAL __theResult := DataPatterns.BestRecordStructure(tempFile, _sampleSize, _emitTransform, _textOutput);
 
         RETURN PROJECT
             (
-                theResult,
+                __theResult,
                 TRANSFORM
                     (
-                        CommonResultRec,
+                        __CommonResultRec,
                         SELF := LEFT
                     )
             );
     ENDMACRO;
 
-    LOCAL resultStructure := CASE
+    LOCAL __resultStructure := CASE
         (
-            TRIM(fileKind, ALL),
-            'flat'  =>  RunBestRecordStructure(flatDataset, sampling, emitTransform, textOutput),
-            'csv'   =>  RunBestRecordStructure(csvDataset, sampling, emitTransform, textOutput),
-            ''      =>  RunBestRecordStructure(csvDataset, sampling, emitTransform, textOutput),
-            ERROR(DATASET([], CommonResultRec), 'Cannot run BestRecordStructure on file of kind "' + fileKind + '"')
+            TRIM(__fileKind, ALL),
+            'flat'  =>  __RunBestRecordStructure(__flatDataset, sampling, emitTransform, textOutput),
+            'csv'   =>  __RunBestRecordStructure(__csvDataset, sampling, emitTransform, textOutput),
+            ''      =>  __RunBestRecordStructure(__csvDataset, sampling, emitTransform, textOutput),
+            ERROR(DATASET([], __CommonResultRec), 'Cannot run BestRecordStructure on file of kind "' + __fileKind + '"')
         );
 
-    RETURN resultStructure;
+    RETURN __resultStructure;
 ENDMACRO;
