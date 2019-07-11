@@ -17,10 +17,14 @@ research tools to an ECL programmer.
 <a name="installation"></a>
 ### Installation
 
-**Note:**  `DataPatterns.Profile()` is now included in HPCC version 7.4.0!  It
-has been added to the ECL Standard Library (`Std.DataPatterns`), and also
-integrated with ECL Watch so you can create a profile of a saved logical file
-using only a web browser.
+**Note:**  `DataPatterns.Profile()` and `DataPatterns.BestRecordStructure()` are
+now included in HPCC version 7.4.0!  They have been added to the ECL Standard
+Library (`Std.DataPatterns`) and also integrated with ECL Watch so you can
+create a profile from a saved logical file using only a web browser.  Note that
+the Std library version of Profile() will create a visualization of the results
+only when executed from ECL Watch; visualizations will not be generated if
+Profile() is called from ECL code.  If that is important to you, install this
+bundle version instead (they coexist peacefully).
 
 This code is installed as an ECL Bundle.  Complete instructions for managing ECL
 Bundles can be found in [The ECL IDE and HPCC Client
