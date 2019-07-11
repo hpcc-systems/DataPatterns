@@ -17,6 +17,15 @@ research tools to an ECL programmer.
 <a name="installation"></a>
 ### Installation
 
+**Note:**  `DataPatterns.Profile()` and `DataPatterns.BestRecordStructure()` are
+now included in HPCC version 7.4.0!  They have been added to the ECL Standard
+Library (`Std.DataPatterns`) and also integrated with ECL Watch so you can
+create a profile from a saved logical file using only a web browser.  Note that
+the Std library version of Profile() will create a visualization of the results
+only when executed from ECL Watch; visualizations will not be generated if
+Profile() is called from ECL code.  If that is important to you, install this
+bundle version instead (they coexist peacefully).
+
 This code is installed as an ECL Bundle.  Complete instructions for managing ECL
 Bundles can be found in [The ECL IDE and HPCC Client
 Tools](http://cdn.hpccsystems.com/releases/CE-Candidate-6.2.0/docs/TheECLIDEandHPCCClientTools-6.2.0-1.pdf) documentation.
@@ -62,6 +71,7 @@ level, such as within your "My Files" folder.
 |1.4.2|String fields containing all numerics with leading zeros are now marked as string in best\_attribute\_type; string fields where the length varies by more than three orders of magnitude are now marked as string in best\_attribute\_type|
 |1.5.0|Add support for SET OF data types and child datasets|
 |1.5.1|Support for tabbed visual results of multiple profiles in a workunit's result; changes to avoid symbol collision in calling ECL code; visual report styling update|
+|1.5.2|Import the ECL Standard Library within the Profile() function macro so callers do not have to|
 
 <a name="profile"></a>
 ### Profile
