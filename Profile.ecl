@@ -755,7 +755,7 @@ EXPORT Profile(inFile,
 
         #UNIQUENAME(BestTypeFlag);
         LOCAL %DataTypeEnum% %BestTypeFlag%(STRING dataPattern, %AttributeType_t% attributeType) := FUNCTION
-            isLeadingZeroInteger := REGEXFIND('^0[09]{0,18}$', dataPattern);
+            isLeadingZeroInteger := REGEXFIND('^0[09]{1,18}$', dataPattern);
             isSignedInteger := REGEXFIND('^\\-[09]{1,19}$', dataPattern);
             isShortUnsignedInteger := REGEXFIND('^[09]{1,19}$', dataPattern);
             isUnsignedInteger := REGEXFIND('^\\+?[09]{1,20}$', dataPattern);
