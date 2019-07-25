@@ -28,7 +28,8 @@ bundle version instead (they coexist peacefully).
 
 This code is installed as an ECL Bundle.  Complete instructions for managing ECL
 Bundles can be found in [The ECL IDE and HPCC Client
-Tools](http://cdn.hpccsystems.com/releases/CE-Candidate-6.2.0/docs/TheECLIDEandHPCCClientTools-6.2.0-1.pdf) documentation.
+Tools](https://d2wulyp08c6njk.cloudfront.net/releases/CE-Candidate-7.4.0/docs/EN_US/TheECLIDEandHPCCClientTools_EN_US-7.4.0-1.pdf)
+documentation.
 
 Use the ecl command line tool to install this bundle:
 
@@ -72,6 +73,7 @@ level, such as within your "My Files" folder.
 |1.5.0|Add support for SET OF data types and child datasets|
 |1.5.1|Support for tabbed visual results of multiple profiles in a workunit's result; changes to avoid symbol collision in calling ECL code; visual report styling update|
 |1.5.2|Import the ECL Standard Library within the Profile() function macro so callers do not have to|
+|1.5.3|Fix leading-zero numeric test, ensuring that only all-numeric values are considered as string type candidates|
 
 <a name="profile"></a>
 ### Profile
