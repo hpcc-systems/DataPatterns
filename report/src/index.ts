@@ -40,30 +40,38 @@ export class ReportTabs extends DockPanel {
         const wuid = urlParts2[0];
         this._wu = Workunit.attach({ baseUrl }, wuid);
     }
+    _prevFetch;
     render(callback?: (w: Widget) => void): this {
-        this._wu.fetchResults().then(results => {
-            Promise.all(results.filter(isProfileResult).map(result => {
-                    return result.fetchRows().then(rows => {
-                        return {
-                            result,
-                            report: new Report(rows)
-                        }
-                    });
-                })).then(resultReports => {
-                    resultReports.forEach((r,i) => {
-                        if (i === 0) {
-                            this.addWidget(r.report, r.result.Name);
-                        } else {
-                            this.addWidget(r.report, r.result.Name, "tab-after", resultReports[i - 1].report);
-                        }
-                    });
-                    super.render(w => {
-                        if (callback) {
-                            callback(this as any);
-                        }
-                    });
+        if(!this._prevFetch){
+            this._prevFetch = this._wu.fetchResults()
+                .then(results => {
+                    Promise.all(results.filter(isProfileResult).map(result => {
+                            return result.fetchRows().then(rows => {
+                                return {
+                                    result,
+                                    report: new Report(rows)
+                                }
+                            });
+                        })).then((resultReports: any) => {
+                            resultReports.forEach((r: any,i) => {
+                                if (i === 0) {
+                                    this.addWidget(r.report, r.result.Name);
+                                } else {
+                                    this.addWidget(r.report, r.result.Name, "tab-after", resultReports[i - 1].report);
+                                }
+                            });
+                        });
                 });
-        });
+        }
+        this._prevFetch
+            .then(()=>{
+                super.render(w => {
+                    if (callback) {
+                        callback(this as any);
+                    }
+                });
+            })
+            ;
         return this;
     }
 }
