@@ -74,6 +74,7 @@ level, such as within your "My Files" folder.
 |1.5.1|Support for tabbed visual results of multiple profiles in a workunit's result; changes to avoid symbol collision in calling ECL code; visual report styling update|
 |1.5.2|Import the ECL Standard Library within the Profile() function macro so callers do not have to|
 |1.5.3|Fix leading-zero numeric test, ensuring that only all-numeric values are considered as string type candidates|
+|1.5.4|Fix tab issues that appeared when multiple profiling results were available|
 
 <a name="profile"></a>
 ### Profile

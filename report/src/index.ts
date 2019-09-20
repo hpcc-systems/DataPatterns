@@ -8,7 +8,7 @@ import { StatChart } from "./statChart";
 
 const knownProfileField = (sch: WUInfo.ECLSchemaItem): boolean => ["attribute", "given_attribute_type", "best_attribute_type", "rec_count", "fill_count", "fill_rate", "cardinality", "cardinality_breakdown", "modes", "min_length", "max_length", "ave_length", "popular_patterns", "rare_patterns", "is_numeric", "numeric_min", "numeric_max", "numeric_mean", "numeric_std_dev", "numeric_lower_quartile", "numeric_median", "numeric_upper_quartile", "numeric_correlations"].indexOf(sch.ColumnName) > 0;
 const countProfileFields = (r: Result): number => r.ECLSchemas.ECLSchemaItem.filter(knownProfileField).length;
-const isProfileResult = (r: Result, threshold = 4): boolean => countProfileFields(r) >= threshold;
+const isProfileResult = (r: Result): boolean => countProfileFields(r) >= 4;
 
 const config = {
     rowHeight: 190,
@@ -31,7 +31,6 @@ const config = {
 
 export class ReportTabs extends DockPanel {
     _wu: Workunit;
-    _results: any = [];
     constructor(private _espUrl: string) {
         super();
         this.hideSingleTabs(true);
@@ -43,42 +42,32 @@ export class ReportTabs extends DockPanel {
     }
     render(callback?: (w: Widget) => void): this {
         this._wu.fetchResults().then(results => {
-            if (this._results.length !== results.length) {
-                this._results = results;
-                results.filter(isProfileResult).forEach((result, i) => {
-                    let prevWidget;
-                    result.fetchRows()
-                        .then(rows => {
-                            const r = new Report(rows);
-                            let tabName = 'Report ' + i;
-                            if (result.Name) {
-                                tabName = result.Name;
-                            }
-                            if (i === 0) {
-                                this.addWidget(r, tabName);
-                            } else {
-                                this.addWidget(r, tabName, "tab-after", prevWidget);
-                            }
-                            prevWidget = r;
-                            super.render(w => {
-                                if (callback) {
-                                    callback(this as any);
-                                }
-                            });
-                        })
-                        ;
-                })
-            } else {
-                super.render(w => {
-                    if (callback) {
-                        callback(this as any);
-                    }
+            Promise.all(results.filter(isProfileResult).map(result => {
+                    return result.fetchRows().then(rows => {
+                        return {
+                            result,
+                            report: new Report(rows)
+                        }
+                    });
+                })).then(resultReports => {
+                    resultReports.forEach((r,i) => {
+                        if (i === 0) {
+                            this.addWidget(r.report, r.result.Name);
+                        } else {
+                            this.addWidget(r.report, r.result.Name, "tab-after", resultReports[i - 1].report);
+                        }
+                    });
+                    super.render(w => {
+                        if (callback) {
+                            callback(this as any);
+                        }
+                    });
                 });
-            }
         });
         return this;
     }
 }
+
 export interface ReportTabs {
     hideSingleTabs(): boolean;
     hideSingleTabs(_: boolean): this;
