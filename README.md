@@ -75,6 +75,7 @@ level, such as within your "My Files" folder.
 |1.5.2|Import the ECL Standard Library within the Profile() function macro so callers do not have to|
 |1.5.3|Fix leading-zero numeric test, ensuring that only all-numeric values are considered as string type candidates|
 |1.5.4|Fix tab issues that appeared when multiple profiling results were available|
+|1.5.5|Fix visualized report vertical scrolling problems; update dependency to resolve security issue|
 
 <a name="profile"></a>
 ### Profile
