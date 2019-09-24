@@ -25,8 +25,7 @@ const config = {
     secondaryColor: "#DDD",
     offwhiteColor: "#FBFBFB",
     blueColor: "#1A99D5",
-    redColor: "#ED1C24",
-    fillRateRedThreshold: 33
+    redColor: "#ED1C24"
 };
 
 export class ReportTabs extends DockPanel {
@@ -197,7 +196,7 @@ export class Report extends Grid {
             const w2 = new StyledTable()
                 .data([
                     ["Cardinality", row.cardinality, "(~" + (row.cardinality / row.fill_count * 100).toFixed(0) + "%)"],
-                    ["Filled", row.fill_count, fillRate <= config.fillRateRedThreshold ? `(<b style="color:${config.redColor}">` + fillRate + "%</b>)" : "(" + fillRate + "%)"],
+                    ["Filled", row.fill_count, "(" + fillRate + "%)"],
                 ])
                 .tbodyColumnStyles([
                     { "font-weight": "bold", "font-size": config.secondaryFontSize + "px", "width": "1%" },
