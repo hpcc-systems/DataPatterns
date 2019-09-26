@@ -187,7 +187,7 @@ EXPORT Profile(inFile,
                fieldListStr = '\'\'',
                maxPatterns = 100,
                maxPatternLen = 100,
-               features = '\'fill_rate,best_ecl_types,cardinality,cardinality_breakdown,modes,lengths,patterns,min_max,mean,std_dev,quartiles,%correlations%\'',
+               features = '\'fill_rate,best_ecl_types,cardinality,cardinality_breakdown,modes,lengths,patterns,min_max,mean,std_dev,quartiles,correlations\'',
                sampleSize = 100,
                lcbLimit = 64) := FUNCTIONMACRO
     LOADXML('<xml/>');
