@@ -187,7 +187,7 @@ EXPORT Profile(inFile,
                fieldListStr = '\'\'',
                maxPatterns = 100,
                maxPatternLen = 100,
-               features = '\'fill_rate,best_ecl_types,cardinality,cardinality_breakdown,modes,lengths,patterns,min_max,mean,std_dev,quartiles,%correlations%\'',
+               features = '\'fill_rate,best_ecl_types,cardinality,cardinality_breakdown,modes,lengths,patterns,min_max,mean,std_dev,quartiles,correlations\'',
                sampleSize = 100,
                lcbLimit = 64) := FUNCTIONMACRO
     LOADXML('<xml/>');
@@ -196,7 +196,6 @@ EXPORT Profile(inFile,
     #UNIQUENAME(scalarFields);              // Contains a delimited list of scalar attributes (full names) along with their indexed positions
     #UNIQUENAME(explicitScalarFields);      // Contains a delimited list of scalar attributes (full names) without indexed positions
     #UNIQUENAME(childDSFields);             // Contains a delimited list of child dataset attributes (full names) along with their indexed positions
-    #UNIQUENAME(explicitAllFields);         // Contains a delimited list of all attributes (full names) without indexed positions
     #UNIQUENAME(fieldCount);                // Contains the number of fields we've seen while processing record layouts
     #UNIQUENAME(recLevel);                  // Will be used to determine at which level we are processing
     #UNIQUENAME(fieldStack);                // String-based stack telling us whether we're within an embedded dataset or record
@@ -345,11 +344,6 @@ EXPORT Profile(inFile,
 
     // Collect the gathered full attribute names so we can walk them later
     #SET(explicitScalarFields, REGEXREPLACE('\\d+:', %'scalarFields'%, ''));
-    #SET(explicitAllFields, %'scalarFields'%);
-    #IF(%'scalarFields'% != '' AND %'childDSFields'% != '')
-        #APPEND(explicitAllFields, ',')
-    #END
-    #APPEND(explicitAllFields, %'childDSFields'%)
 
     // Define the record layout that will be used by the inner _Inner_Profile() call
     LOCAL ModeRec := RECORD

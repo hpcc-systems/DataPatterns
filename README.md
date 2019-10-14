@@ -76,6 +76,7 @@ level, such as within your "My Files" folder.
 |1.5.3|Fix leading-zero numeric test, ensuring that only all-numeric values are considered as string type candidates|
 |1.5.4|Fix tab issues that appeared when multiple profiling results were available|
 |1.5.5|Fix visualized report vertical scrolling problems; update dependency to resolve security issue; removed erroneous HTML fragment from reports|
+|1.5.6|Fix 'correlations' default value within Profile's 'features' parameter; dependency security updates|
 
 <a name="profile"></a>
 ### Profile
