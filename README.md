@@ -10,6 +10,7 @@ research tools to an ECL programmer.
   * [Profile()](#profile)
   * [Summary Report with Graphs](#summary_report_with_graphs)
   * [ProfileFromPath()](#profilefrompath)
+  * [NormalizeProfileResults()](#normalizeprofileresults)
   * [BestRecordStructure()](#bestrecordstructure)
   * [BestRecordStructureFromPath()](#bestrecordstructurefrompath)
   * [Testing](#testing)
@@ -76,7 +77,7 @@ level, such as within your "My Files" folder.
 |1.5.3|Fix leading-zero numeric test, ensuring that only all-numeric values are considered as string type candidates|
 |1.5.4|Fix tab issues that appeared when multiple profiling results were available|
 |1.5.5|Fix visualized report vertical scrolling problems; update dependency to resolve security issue; removed erroneous HTML fragment from reports|
-|1.5.7||
+|1.5.7|Addition of NormalizeProfileResults() function macro|
 
 <a name="profile"></a>
 ### Profile
@@ -331,6 +332,61 @@ requires HPCC Systems version 6.4.0 or later.
 `ProfileFromPath` accepts the same arguments as `Profile`, with the exception
 of `fieldListStr` (the assumption is, if you know the fields then you know
 enough to construct a dataset and can use `Profile` instead).
+
+<a name="normalizeprofileresults"></a>
+### NormalizeProfileResults
+
+The result of a call to `Profile` or `ProfileFromPath` is a rich dataset.
+There are several fields (depending on the features requested) and some
+of them can include child datasets embedded for each field from the dataset
+being profiled.
+
+In some circumstances, it would be advantageous to save the profile results
+in a morn normalized format.  For instance, a normalized format would the
+task of comparing one profile result to another much easier.
+
+`NormalizeProfileResults` accepts only one argument, the dataset representing
+the result of a call to either `Profile` or `ProfileFromPath`.  The result
+is a dataset in the following format:
+
+    RECORD
+        STRING      attribute;  // Field from profiled dataset
+        STRING      key;        // Field from profile results
+        STRING      value;      // Value from profile results
+    END;
+
+Any child datasets from the profile results (modes, cardinality breakdowns,
+text patterns, and correlations) are not copied to the normalized format.
+
+Sample code:
+
+    IMPORT DataPatterns;
+
+    filePath := '~thor::my_sample_data';
+
+    ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
+
+    profileResults := DataPatterns.Profile(ds);
+    
+    normalizedResults := DataPatterns.NormalizeProfileResults(profileResults);
+
+    OUTPUT(normalizedResults, ALL, NAMED('normalizedResults'));
+
+profileResults:
+
+|attribute|given\_attribute\_type|rec\_count|fill\_count|fill\_rate|cardinality|
+|---|---|---|---|---|---|
+|field1|string|1000|1000|100|997|
+
+normalizedResults:
+
+|attribute|key|value|
+|---|---|---|
+|field1|given\_attribute\_type|string|
+|field1|rec\_count|1000|
+|field1|fill\_count|1000|
+|field1|fill\_rate|100|
+|field1|cardinality|997|
 
 <a name="bestrecordstructure"></a>
 ### BestRecordStructure
