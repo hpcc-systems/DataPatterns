@@ -342,10 +342,10 @@ of them can include child datasets embedded for each field from the dataset
 being profiled.
 
 In some circumstances, it would be advantageous to save the profile results
-in a morn normalized format.  For instance, a normalized format would the
-task of comparing one profile result to another much easier.
+in a more normalized format.  For instance, a normalized format would allow
+the task of comparing one profile result to another to be much easier.
 
-`NormalizeProfileResults` accepts only one argument, the dataset representing
+`NormalizeProfileResults` accepts only one argument:  the dataset representing
 the result of a call to either `Profile` or `ProfileFromPath`.  The result
 is a dataset in the following format:
 
