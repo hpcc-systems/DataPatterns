@@ -326,6 +326,19 @@ EXPORT Profile(inFile,
                     #APPEND(childDSFields, ',')
                 #END
                 #APPEND(childDSFields, %'fieldCount'% + ':' + %'fullName'%)
+                // Extract the child dataset into its own attribute so we can more easily
+                // process it later
+                #SET(temp, #MANGLE(%'fullName'%));
+                LOCAL %temp% := NORMALIZE
+                    (
+                        %distributedInFile%,
+                        LEFT.%fullName%,
+                        TRANSFORM
+                            (
+                                RECORDOF(%distributedInFile%.%fullName%),
+                                SELF := RIGHT
+                            )
+                    );
             #ELSEIF(%{@isEnd}% = 1)
                 #SET(namePrefix, REGEXREPLACE('\\w+\\.$', %'namePrefix'%, ''))
                 #IF(%'fieldStack'%[1] = 'd')
@@ -638,86 +651,99 @@ EXPORT Profile(inFile,
                             #SET(fieldCount, %fieldCount% + 1)
                             #IF(%needsDelim% = 1) + #END
 
-                            PROJECT
-                                (
-                                    TABLE
-                                        (
-                                            _inFile,
-                                            {
-                                                %Attribute_t%       attribute := %'namePrefix'% + %'@name'%,
-                                                %AttributeType_t%   given_attribute_type := %'@ecltype'%,
-                                                %StringValue_t%     string_value :=
-                                                                        #IF(%_IsSetType%(%'@type'%))
-                                                                            (%StringValue_t%)Std.Str.CombineWords((SET OF STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%), ', ')
-                                                                        #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', %'@type'%))
-                                                                            (%StringValue_t%)_inFile.#EXPAND(%'namePrefix'% + %'@name'%)
-                                                                        #ELSEIF(REGEXFIND('string', %'@type'%))
-                                                                            %_TrimmedStr%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
-                                                                        #ELSE
-                                                                            %_TrimmedStr%((%StringValue_t%)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
-                                                                        #END,
-                                                UNSIGNED4           value_count := COUNT(GROUP),
-                                                %DataPattern_t%     data_pattern :=
-                                                                        #IF(%_IsSetType%(%'@type'%))
-                                                                            %_MapAllStr%(%_TrimmedStr%(Std.Str.CombineWords((SET OF STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%), ', '))[..%foundMaxPatternLen%])
-                                                                        #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
-                                                                            %_MapAllStr%((STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
-                                                                        #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
-                                                                            #IF(%@size% < 0 OR (%@size% DIV 2 + 1) > %foundMaxPatternLen%)
-                                                                                %_MapAllUni%(%_TrimmedUni%((UNICODE)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
+                            IF(EXISTS(_inFile),
+                                PROJECT
+                                    (
+                                        TABLE
+                                            (
+                                                _inFile,
+                                                {
+                                                    %Attribute_t%       attribute := %'namePrefix'% + %'@name'%,
+                                                    %AttributeType_t%   given_attribute_type := %'@ecltype'%,
+                                                    %StringValue_t%     string_value :=
+                                                                            #IF(%_IsSetType%(%'@type'%))
+                                                                                (%StringValue_t%)Std.Str.CombineWords((SET OF STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%), ', ')
+                                                                            #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', %'@type'%))
+                                                                                (%StringValue_t%)_inFile.#EXPAND(%'namePrefix'% + %'@name'%)
+                                                                            #ELSEIF(REGEXFIND('string', %'@type'%))
+                                                                                %_TrimmedStr%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
                                                                             #ELSE
-                                                                                %_MapAllUni%(%_TrimmedUni%((UNICODE)_inFile.#EXPAND(%'namePrefix'% + %'@name'%)))
-                                                                            #END
-                                                                        #ELSEIF(REGEXFIND('string', %'@type'%))
-                                                                            #IF(%@size% < 0 OR %@size% > %foundMaxPatternLen%)
-                                                                                %_MapAllStr%(%_TrimmedStr%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
+                                                                                %_TrimmedStr%((%StringValue_t%)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
+                                                                            #END,
+                                                    UNSIGNED4           value_count := COUNT(GROUP),
+                                                    %DataPattern_t%     data_pattern :=
+                                                                            #IF(%_IsSetType%(%'@type'%))
+                                                                                %_MapAllStr%(%_TrimmedStr%(Std.Str.CombineWords((SET OF STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%), ', '))[..%foundMaxPatternLen%])
+                                                                            #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
+                                                                                %_MapAllStr%((STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
+                                                                            #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
+                                                                                #IF(%@size% < 0 OR (%@size% DIV 2 + 1) > %foundMaxPatternLen%)
+                                                                                    %_MapAllUni%(%_TrimmedUni%((UNICODE)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
+                                                                                #ELSE
+                                                                                    %_MapAllUni%(%_TrimmedUni%((UNICODE)_inFile.#EXPAND(%'namePrefix'% + %'@name'%)))
+                                                                                #END
+                                                                            #ELSEIF(REGEXFIND('string', %'@type'%))
+                                                                                #IF(%@size% < 0 OR %@size% > %foundMaxPatternLen%)
+                                                                                    %_MapAllStr%(%_TrimmedStr%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
+                                                                                #ELSE
+                                                                                    %_MapAllStr%(%_TrimmedStr%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%)))
+                                                                                #END
+                                                                            #ELSEIF(%'@type'% = 'boolean')
+                                                                                'B'
                                                                             #ELSE
-                                                                                %_MapAllStr%(%_TrimmedStr%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%)))
+                                                                                %_MapAllStr%(%_TrimmedStr%((STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
+                                                                            #END,
+                                                    UNSIGNED4           data_length :=
+                                                                            #IF(%_IsSetType%(%'@type'%))
+                                                                                COUNT(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
+                                                                            #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
+                                                                                LENGTH(%_TrimmedUni%((UNICODE)_inFile.#EXPAND(%'namePrefix'% + %'@name'%)))
+                                                                            #ELSEIF(REGEXFIND('string', %'@type'%))
+                                                                                LENGTH(%_TrimmedStr%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%)))
+                                                                            #ELSEIF(%'@type'% = 'boolean')
+                                                                                1
+                                                                            #ELSE
+                                                                                LENGTH((STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
+                                                                            #END,
+                                                    BOOLEAN             is_filled :=
+                                                                            #IF(%_IsSetType%(%'@type'%))
+                                                                                COUNT(_inFile.#EXPAND(%'namePrefix'% + %'@name'%)) > 0
+                                                                            #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
+                                                                                LENGTH(%_TrimmedUni%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))) > 0
+                                                                            #ELSEIF(REGEXFIND('string', %'@type'%))
+                                                                                LENGTH(%_TrimmedStr%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))) > 0
+                                                                            #ELSEIF(REGEXFIND('data', %'@type'%))
+                                                                                LENGTH(_inFile.#EXPAND(%'namePrefix'% + %'@name'%)) > 0
+                                                                            #ELSEIF(%'@type'% = 'boolean')
+                                                                                TRUE
+                                                                            #ELSE
+                                                                                _inFile.#EXPAND(%'namePrefix'% + %'@name'%) != 0
+                                                                            #END,
+                                                    BOOLEAN             is_number :=
+                                                                            #IF(%_IsSetType%(%'@type'%))
+                                                                                FALSE
+                                                                            #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
+                                                                                TRUE
+                                                                            #ELSE
+                                                                                FALSE
                                                                             #END
-                                                                        #ELSEIF(%'@type'% = 'boolean')
-                                                                            'B'
-                                                                        #ELSE
-                                                                            %_MapAllStr%(%_TrimmedStr%((STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
-                                                                        #END,
-                                                UNSIGNED4           data_length :=
-                                                                        #IF(%_IsSetType%(%'@type'%))
-                                                                            COUNT(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
-                                                                        #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
-                                                                            LENGTH(%_TrimmedUni%((UNICODE)_inFile.#EXPAND(%'namePrefix'% + %'@name'%)))
-                                                                        #ELSEIF(REGEXFIND('string', %'@type'%))
-                                                                            LENGTH(%_TrimmedStr%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%)))
-                                                                        #ELSEIF(%'@type'% = 'boolean')
-                                                                            1
-                                                                        #ELSE
-                                                                            LENGTH((STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
-                                                                        #END,
-                                                BOOLEAN             is_filled :=
-                                                                        #IF(%_IsSetType%(%'@type'%))
-                                                                            COUNT(_inFile.#EXPAND(%'namePrefix'% + %'@name'%)) > 0
-                                                                        #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
-                                                                            LENGTH(%_TrimmedUni%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))) > 0
-                                                                        #ELSEIF(REGEXFIND('string', %'@type'%))
-                                                                            LENGTH(%_TrimmedStr%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))) > 0
-                                                                        #ELSEIF(REGEXFIND('data', %'@type'%))
-                                                                            LENGTH(_inFile.#EXPAND(%'namePrefix'% + %'@name'%)) > 0
-                                                                        #ELSEIF(%'@type'% = 'boolean')
-                                                                            TRUE
-                                                                        #ELSE
-                                                                            _inFile.#EXPAND(%'namePrefix'% + %'@name'%) != 0
-                                                                        #END,
-                                                BOOLEAN             is_number :=
-                                                                        #IF(%_IsSetType%(%'@type'%))
-                                                                            FALSE
-                                                                        #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
-                                                                            TRUE
-                                                                        #ELSE
-                                                                            FALSE
-                                                                        #END
-                                            },
-                                            _inFile.#EXPAND(%'namePrefix'% + %'@name'%),
-                                            LOCAL
-                                        ),
-                                        TRANSFORM(%DataInfoRec%, SELF := LEFT)
+                                                },
+                                                _inFile.#EXPAND(%'namePrefix'% + %'@name'%),
+                                                LOCAL
+                                            ),
+                                            TRANSFORM(%DataInfoRec%, SELF := LEFT)
+                                    ),
+                                DATASET
+                                    (
+                                        1,
+                                        TRANSFORM
+                                            (
+                                                %DataInfoRec%,
+                                                SELF.attribute := %'namePrefix'% + %'@name'%,
+                                                SELF.given_attribute_type := %'@ecltype'%,
+                                                SELF := []
+                                            )
+                                    )
                                 )
 
                             #SET(needsDelim, 1)
@@ -1371,7 +1397,7 @@ EXPORT Profile(inFile,
                                 SELF := RIGHT,
                                 SELF := LEFT
                             ),
-                        KEEP(1), SMART
+                        LEFT OUTER, KEEP(1), SMART
                     ) : ONWARNING(4531, IGNORE)
             #ELSE
                 %final20%
@@ -1503,9 +1529,13 @@ EXPORT Profile(inFile,
             #IF(%'dsNameValue'% != '')
                 #SET(numValue, REGEXFIND('^(\\d+):', %'dsNameValue'%, 1))
                 #SET(nameValue, REGEXFIND(':([^:]+)$', %'dsNameValue'%, 1))
+                // The child dataset should have been extracted into its own
+                // local attribute; reference it during our call to the inner
+                // profile function macro
+                #SET(temp, #MANGLE(%'nameValue'%))
                 + _Inner_Profile
                     (
-                        GLOBAL(%distributedInFile%.%nameValue%),
+                        GLOBAL(%temp%),
                         '',
                         maxPatterns,
                         maxPatternLen,
