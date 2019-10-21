@@ -159,12 +159,12 @@
  *                              quartiles               numeric_lower_quartile
  *                                                      numeric_median
  *                                                      numeric_upper_quartile
- *                              %correlations%            numeric_correlations
+ *                              correlations            numeric_correlations
  *                          To omit the output associated with a single keyword,
  *                          set this argument to a comma-delimited string
  *                          containing all other keywords; note that the
  *                          is_numeric output will appear only if min_max,
- *                          mean, std_dev, quartiles, or %correlations% features
+ *                          mean, std_dev, quartiles, or correlations features
  *                          are active; also note that enabling the
  *                          cardinality_breakdown feature will also enable
  *                          the cardinality feature, even if it is not
@@ -1045,7 +1045,7 @@ EXPORT Profile(inFile,
             #END
         #END
 
-        // Run %correlations% on all unique pairs of numeric fields in the data
+        // Run correlations on all unique pairs of numeric fields in the data
 
         #UNIQUENAME(BaseCorrelationLayout);
         LOCAL %BaseCorrelationLayout% := RECORD
@@ -1094,7 +1094,7 @@ EXPORT Profile(inFile,
                 %BaseCorrelationLayout%
             );
 
-        // Append a duplicate of the %correlations% to itself with the X and Y fields
+        // Append a duplicate of the correlations to itself with the X and Y fields
         // reversed so we can easily merge results on a per-attribute basis later
         #UNIQUENAME(correlations);
         LOCAL %correlations% := %correlations0% + PROJECT
