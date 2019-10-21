@@ -78,6 +78,7 @@ level, such as within your "My Files" folder.
 |1.5.4|Fix tab issues that appeared when multiple profiling results were available|
 |1.5.5|Fix visualized report vertical scrolling problems; update dependency to resolve security issue; removed erroneous HTML fragment from reports|
 |1.5.7|Add NormalizeProfileResults() function macro (see below for details); fix ECL compiler problem accessing child datasets hosted within embedded child records; make sure empty child dataset information appears in the final output|
+|1.5.8||
 
 <a name="profile"></a>
 ### Profile
