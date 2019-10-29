@@ -70,7 +70,7 @@ EXPORT Tests := MODULE
             ASSERT(Basic_String_Profile[1].numeric_lower_quartile = 0),
             ASSERT(Basic_String_Profile[1].numeric_median = 0),
             ASSERT(Basic_String_Profile[1].numeric_upper_quartile = 0),
-            ASSERT(COUNT(Basic_String_Profile[1].numeric_correlations) = 0),
+            ASSERT(COUNT(Basic_String_Profile[1].correlations) = 0),
             ASSERT(TRUE)
         ];
 
@@ -121,7 +121,7 @@ EXPORT Tests := MODULE
             ASSERT(Basic_Numeric_Profile[1].numeric_lower_quartile = -1000),
             ASSERT(Basic_Numeric_Profile[1].numeric_median = 500),
             ASSERT(Basic_Numeric_Profile[1].numeric_upper_quartile = 2000),
-            ASSERT(COUNT(Basic_Numeric_Profile[1].numeric_correlations) = 0),
+            ASSERT(COUNT(Basic_Numeric_Profile[1].correlations) = 0),
             ASSERT(TRUE)
         ];
 
@@ -440,7 +440,7 @@ EXPORT Tests := MODULE
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_lower_quartile = 123),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_median = 555),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_upper_quartile = 0),
-            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.x')[1].numeric_correlations) = 2),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.x')[1].correlations) = 2),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].attribute = 'foo.y'),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].rec_count = 2),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].given_attribute_type = 'unsigned4'),
@@ -461,7 +461,7 @@ EXPORT Tests := MODULE
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_lower_quartile = 345),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_median = 555),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_upper_quartile = 0),
-            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.y')[1].numeric_correlations) = 2),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.y')[1].correlations) = 2),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].attribute = 'foo.z'),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].rec_count = 2),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].given_attribute_type = 'unsigned4'),
@@ -482,7 +482,7 @@ EXPORT Tests := MODULE
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_lower_quartile = 543),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_median = 555),
             ASSERT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_upper_quartile = 0),
-            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.z')[1].numeric_correlations) = 2),
+            ASSERT(COUNT(Embedded_Child1_Profile(attribute = 'foo.z')[1].correlations) = 2),
             ASSERT(TRUE)
         ];
 
@@ -590,7 +590,7 @@ EXPORT Tests := MODULE
             ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_lower_quartile = 0),
             ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_median = 0),
             ASSERT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_upper_quartile = 0),
-            ASSERT(COUNT(SetOf_Types_Profile(attribute = 'my_set')[1].numeric_correlations) = 0),
+            ASSERT(COUNT(SetOf_Types_Profile(attribute = 'my_set')[1].correlations) = 0),
             ASSERT(TRUE)
         ];
 END;

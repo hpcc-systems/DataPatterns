@@ -29,7 +29,7 @@ bundle version instead (they coexist peacefully).
 
 This code is installed as an ECL Bundle.  Complete instructions for managing ECL
 Bundles can be found in [The ECL IDE and HPCC Client
-Tools](https://d2wulyp08c6njk.cloudfront.net/releases/CE-Candidate-7.4.0/docs/EN_US/TheECLIDEandHPCCClientTools_EN_US-7.4.0-1.pdf)
+Tools](https://d2wulyp08c6njk.cloudfront.net/releases/CE-Candidate-7.6.0/docs/EN_US/TheECLIDEandHPCCClientTools_EN_US-7.6.0-1.pdf)
 documentation.
 
 Use the ecl command line tool to install this bundle:
@@ -78,7 +78,7 @@ level, such as within your "My Files" folder.
 |1.5.4|Fix tab issues that appeared when multiple profiling results were available|
 |1.5.5|Fix visualized report vertical scrolling problems; update dependency to resolve security issue; removed erroneous HTML fragment from reports|
 |1.5.7|Add NormalizeProfileResults() function macro (see below for details); fix ECL compiler problem accessing child datasets hosted within embedded child records; make sure empty child dataset information appears in the final output|
-|1.5.8||
+|1.6.0|is\_numeric result is now based upon best\_attribute\_type rather than given\_attribute\_type, and the numeric\_xxxx results will appear for those attributes as well; renamed numeric\_correlations result to simply correlations|
 
 <a name="profile"></a>
 ### Profile
@@ -139,42 +139,43 @@ Documentation as pulled from the beginning of Profile.ecl:
          popular_patterns        The most common patterns of values; see below
          rare_patterns           The least common patterns of values; see below
          is_numeric              Boolean indicating if the original attribute
-                                 was a numeric scalar and therefore whether or
-                                 not the numeric_xxxx output fields will be
+                                 was a numeric scalar or if the best_attribute_type
+                                 value was a numeric scaler; if TRUE then the
+                                 numeric_xxxx output fields will be
                                  populated with actual values; if this value
                                  is FALSE then all numeric_xxxx output values
                                  should be ignored
          numeric_min             The smallest non-nil value found within the
-                                 attribute as a DECIMAL; the attribute must be
-                                 a numeric ECL datatype; non-numeric attributes
-                                 will return zero
+                                 attribute as a DECIMAL; this value is valid only
+                                 if is_numeric is TRUE; if is_numeric is FALSE
+                                 then zero will show here
          numeric_max             The largest non-nil value found within the
-                                 attribute as a DECIMAL; the attribute must be
-                                 a numeric ECL datatype; non-numeric attributes
-                                 will return zero
+                                 attribute as a DECIMAL; this value is valid only
+                                 if is_numeric is TRUE; if is_numeric is FALSE
+                                 then zero will show here
          numeric_mean            The mean (average) non-nil value found within
-                                 the attribute as a DECIMAL; the attribute must
-                                 be a numeric ECL datatype; non-numeric
-                                 attributes will return zero
+                                 the attribute as a DECIMAL; this value is valid only
+                                 if is_numeric is TRUE; if is_numeric is FALSE
+                                 then zero will show here
          numeric_std_dev         The standard deviation of the non-nil values
-                                 in the attribute as a DECIMAL; the attribute
-                                 must be a numeric ECL datatype; non-numeric
-                                 attributes will return zero
+                                 in the attribute as a DECIMAL; this value is valid only
+                                 if is_numeric is TRUE; if is_numeric is FALSE
+                                 then zero will show here
          numeric_lower_quartile  The value separating the first (bottom) and
                                  second quarters of non-nil values within
-                                 the attribute as a DECIMAL; the attribute must
-                                 be a numeric ECL datatype; non-numeric
-                                 attributes will return zero
+                                 the attribute as a DECIMAL; this value is valid only
+                                 if is_numeric is TRUE; if is_numeric is FALSE
+                                 then zero will show here
          numeric_median          The median non-nil value within the attribute
-                                 as a DECIMAL; the attribute must be a numeric
-                                 ECL datatype; non-numeric attributes will return
-                                 zero
+                                 as a DECIMAL; this value is valid only
+                                 if is_numeric is TRUE; if is_numeric is FALSE
+                                 then zero will show here
          numeric_upper_quartile  The value separating the third and fourth
                                  (top) quarters of non-nil values within
-                                 the attribute as a DECIMAL; the attribute must
-                                 be a numeric ECL datatype; non-numeric
-                                 attributes will return zero
-         numeric_correlations    A child dataset containing correlation values
+                                 the attribute as a DECIMAL; this value is valid only
+                                 if is_numeric is TRUE; if is_numeric is FALSE
+                                 then zero will show here
+         correlations            A child dataset containing correlation values
                                  comparing the current numeric attribute with all
                                  other numeric attributes, listed in descending
                                  correlation value order; the attribute must be
@@ -245,7 +246,7 @@ Documentation as pulled from the beginning of Profile.ecl:
                                  quartiles               numeric_lower_quartile
                                                          numeric_median
                                                          numeric_upper_quartile
-                                 correlations            numeric_correlations
+                                 correlations            correlations
                              To omit the output associated with a single keyword,
                              set this argument to a comma-delimited string
                              containing all other keywords; note that the
