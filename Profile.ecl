@@ -1423,12 +1423,12 @@ EXPORT Profile(inFile,
         LOCAL %final35% := JOIN
             (
                 %final30%,
-                %filledDataInfoNumeric%,
+                %attributeBestTypeInfo%,
                 LEFT.attribute = RIGHT.attribute,
                 TRANSFORM
                     (
                         RECORDOF(LEFT),
-                        SELF.is_numeric := LEFT.is_numeric OR RIGHT.is_number,
+                        SELF.is_numeric := LEFT.is_numeric OR (REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', RIGHT.best_attribute_type) AND NOT REGEXFIND('set of ', RIGHT.best_attribute_type)),
                         SELF := LEFT
                     ),
                 LEFT OUTER, KEEP(1), SMART
