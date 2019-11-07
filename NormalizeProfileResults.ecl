@@ -1,6 +1,6 @@
 /**
  * This function macro rewrites the dataset result from a call to Profile()
- * or ProfileFromPath() into a more normalized format.  This format is ideal
+ * into a more normalized format.  This format is ideal
  * for saving as a separate file, possibly to be used to compare against a
  * future profile run against a new version of the original dataset.
  *
