@@ -80,7 +80,7 @@ level, such as within your "My Files" folder.
 |1.5.7|Add NormalizeProfileResults() function macro (see below for details); fix ECL compiler problem accessing child datasets hosted within embedded child records; make sure empty child dataset information appears in the final output|
 |1.6.0|is\_numeric result is now based upon best\_attribute\_type rather than given\_attribute\_type, and the numeric\_xxxx results will appear for those attributes as well; renamed numeric\_correlations result to simply correlations||
 |1.6.1|Fix problem where large datasets with implicit numeric conversions ran out of memory during the final phase of profiling|
-|1.6.2||
+|1.6.2|Fix issue where a record definition END would appear in the wrong place within BestRecordStructure()|
 
 <a name="profile"></a>
 ### Profile
