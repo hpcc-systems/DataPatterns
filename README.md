@@ -9,10 +9,8 @@ research tools to an ECL programmer.
   * [Release Notes](#release_notes)
   * [Profile()](#profile)
   * [Summary Report with Graphs](#summary_report_with_graphs)
-  * [ProfileFromPath()](#profilefrompath)
   * [NormalizeProfileResults()](#normalizeprofileresults)
   * [BestRecordStructure()](#bestrecordstructure)
-  * [BestRecordStructureFromPath()](#bestrecordstructurefrompath)
   * [Testing](#testing)
 
 <a name="installation"></a>
@@ -80,6 +78,7 @@ level, such as within your "My Files" folder.
 |1.5.7|Add NormalizeProfileResults() function macro (see below for details); fix ECL compiler problem accessing child datasets hosted within embedded child records; make sure empty child dataset information appears in the final output|
 |1.6.0|is\_numeric result is now based upon best\_attribute\_type rather than given\_attribute\_type, and the numeric\_xxxx results will appear for those attributes as well; renamed numeric\_correlations result to simply correlations||
 |1.6.1|Fix problem where large datasets with implicit numeric conversions ran out of memory during the final phase of profiling|
+|1.6.2|Fix issue where a record definition END would appear in the wrong place within BestRecordStructure(); remove BestRecordStructureFromPath() and ProfileFromPath() -- they never worked in all circumstances|
 
 <a name="profile"></a>
 ### Profile
@@ -318,28 +317,10 @@ This is a screen capture displaying a report row for a string attribute
 
 ![Screen capture of two report rows](https://user-images.githubusercontent.com/1891935/56989566-c228d880-6b60-11e9-87a8-c2aa1c76b3d8.png)
 
-<a name="profilefrompath"></a>
-### ProfileFromPath
-
-You can also profile a logical file by knowing only its path.  Note that this
-requires HPCC Systems version 6.4.0 or later.
-
-    IMPORT DataPatterns;
-
-    filePath := '~thor::my_sample_data';
-
-    profileResults := DataPatterns.ProfileFromPath(filePath);
-
-    OUTPUT(profileResults, ALL, NAMED('profileResults'));
-
-`ProfileFromPath` accepts the same arguments as `Profile`, with the exception
-of `fieldListStr` (the assumption is, if you know the fields then you know
-enough to construct a dataset and can use `Profile` instead).
-
 <a name="normalizeprofileresults"></a>
 ### NormalizeProfileResults
 
-The result of a call to `Profile` or `ProfileFromPath` is a rich dataset.
+The result of a call to `Profile` is a rich dataset.
 There are several fields (depending on the features requested) and some
 of them can include child datasets embedded for each field from the dataset
 being profiled.
@@ -349,7 +330,7 @@ in a more normalized format.  For instance, a normalized format would allow
 the task of comparing one profile result to another to be much easier.
 
 `NormalizeProfileResults` accepts only one argument:  the dataset representing
-the result of a call to either `Profile` or `ProfileFromPath`.  The result
+the result of a call to either `Profile`.  The result
 is a dataset in the following format:
 
     RECORD
@@ -423,28 +404,6 @@ Note that, when outputing the result of `BestRecordStructure` to a workunit,
 it is a good idea to add an ALL flag to the OUTPUT function.  This ensures that
 all attributes will be displayed.  Otherwise, if you have more than 100
 attributes in the given dataset, the result will be truncated.
-
-<a name="bestrecordstructurefrompath"></a>
-### BestRecordStructureFromPath
-
-Similar to `ProfileFromPath`, you can obtain the best ECL record structure for a
-logical file given only its path.  Note that this requires HPCC Systems version
-6.4.0 or later.
-
-    IMPORT DataPatterns;
-
-    filePath := '~thor::my_sample_data';
-
-    recordDefinition := DataPatterns.BestRecordStructureFromPath(filePath);
-
-    OUTPUT(recordDefinition, NAMED('recordDefinition'), ALL);
-
-This function can also emit a TRANSFORM function that provides explicit type
-casting where necessary, such as casting a STRING to an UNSIGNED.  See the
-comments within the function for details.
-
-`BestRecordStructureFromPath` accepts the same optional arguments as
-`BestRecordStructure`.
 
 <a name="testing"></a>
 ### Testing
