@@ -1,43 +1,43 @@
 <!DOCTYPE html>
 <html>
 
-    <head>
-        <meta charset="utf-8">
-        <title>HPCC: Visualization</title>
-        <link href="./index.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://viz.hpccsystems.com/v2.6.4/common/font-awesome/css/font-awesome.min.css">
-        <script src="https://viz.hpccsystems.com/v2.6.4/loader/dist/index.min.js"></script>
-        <script>
-            var espUrl = window.location.href;
-            var debugWuid = window.location.search.split("?")[1];
-            if (debugWuid) {
-                espUrl = "http://play.hpccsystems.com:8010/WsWorkunits/res/" + debugWuid + "/report/res/index.html";
-            }
-        </script>
-    </head>
+<head>
+    <meta charset="utf-8">
+    <title>HPCC: Visualization</title>
+    <link href="./index.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@hpcc-js/common@2.21.2/font-awesome/css/font-awesome.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/loader@2.13.2/dist/index.min.js"></script>
+    <script>
+        var espUrl = window.location.href;
+        var debugWuid = window.location.search.split("?")[1];
+        if (debugWuid) {
+            espUrl = "http://play.hpccsystems.com:8010/WsWorkunits/res/" + debugWuid + "/report/res/index.html";
+        }
+    </script>
+</head>
 
-    <body onresize="resize();">
-        <div id="placeholder"></div>
-        <script>
-            var app;
-            window["@hpcc-js/loader"].amd("", false).then(function(require) {
-                require([debugWuid ? "../lib-umd/index" : "./index.min"], function (indexMod) {
-                    app = new indexMod.ReportTabs(espUrl)
-                        .target("placeholder")
-                        ;
-                    resize();
-                });
+<body onresize="resize();">
+    <div id="placeholder"></div>
+    <script>
+        var app;
+        window["@hpcc-js/loader"].amd("", false).then(function (require) {
+            require([debugWuid ? "../lib-umd/index" : "./index.min"], function (indexMod) {
+                app = new indexMod.ReportTabs(espUrl)
+                    .target("placeholder")
+                    ;
+                resize();
             });
+        });
 
-            function resize() {
-                if (app) {
-                    app
-                        .resize()
-                        .lazyRender()
-                        ;
-                }
-            };
-        </script>
-    </body>
+        function resize() {
+            if (app) {
+                app
+                    .resize()
+                    .lazyRender()
+                    ;
+            }
+        };
+    </script>
+</body>
 
 </html>

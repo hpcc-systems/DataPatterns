@@ -1,6 +1,6 @@
 IMPORT ^ as DataPatterns;
 
-filePath := '~stock_data::cleaned_data';
+filePath := '~progguide::exampledata::people';
 
 ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
 

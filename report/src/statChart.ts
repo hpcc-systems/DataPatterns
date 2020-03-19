@@ -1,5 +1,6 @@
 import { QuartileCandlestick, Scatter } from "@hpcc-js/chart";
 import { format as d3Format, HTMLWidget, Palette } from "@hpcc-js/common";
+import { StyledTable } from "@hpcc-js/html";
 
 const rainbow = Palette.rainbow("Blues");
 const palette = Palette.ordinal("Quartile", [rainbow(100, 0, 100), rainbow(50, 0, 100), rainbow(50, 0, 100), rainbow(75, 0, 100)]);
@@ -18,21 +19,13 @@ type AxisTicks = AxisTick[];
 const CANDLE_HEIGHT = 20;   // Pixels
 const DOMAIN_PADDING = 10;  // Percentage
 
-class BellCurve extends Scatter {
-}
-interface BellCurve {
-    xAxisTicks(): Array<{ value: string, label: string }>;
-    xAxisTicks(_: Array<{ value: string, label: string }>): this;
-}
-BellCurve.prototype.publishProxy("xAxisTicks", "domainAxis", "ticks");
-
 function myFormatter(format: string): (num: number) => string {
     const formatter = d3Format(format);
     return function (num: number) {
         const strVal = (Math.round(num * 100) / 100).toString();
         if (strVal.length <= 4) return strVal;
         return formatter(num);
-    }
+    };
 }
 
 export class StatChart extends HTMLWidget {
@@ -40,7 +33,7 @@ export class StatChart extends HTMLWidget {
     private _selectMode: any;
     private _tickFormatter: (_: number) => string;
 
-    private _bellCurve: BellCurve = new BellCurve()
+    private _bellCurve = new Scatter()
         .columns(["", "Std. Dev."])
         .paletteID("Quartile")
         .interpolate_default("basis")
@@ -51,7 +44,7 @@ export class StatChart extends HTMLWidget {
         .yAxisHidden(true)
         .yAxisDomainLow(0)
         .yAxisDomainHigh(110)
-        .yAxisGuideLines(false) as BellCurve
+        .yAxisGuideLines(false)
         ;
 
     private _candle = new QuartileCandlestick()
@@ -87,7 +80,7 @@ export class StatChart extends HTMLWidget {
     private domain(mode: Mode): [number, number] {
         switch (mode) {
             case "25_75":
-                return [this.quartile(1), this.quartile(3)]
+                return [this.quartile(1), this.quartile(3)];
             case "normal":
                 return [this.stdDev(-4), this.stdDev(4)];
             case "min_max":
@@ -134,7 +127,7 @@ export class StatChart extends HTMLWidget {
                     { label: "+1σ", value: this.stdDev(1) },
                     { label: "+2σ", value: this.stdDev(2) },
                     { label: "+3σ", value: this.stdDev(3) },
-                    { label: this.formatStdDev(4), value: this.stdDev(4) },
+                    { label: this.formatStdDev(4), value: this.stdDev(4) }
                 ];
                 break;
             case "min_max":
@@ -213,3 +206,44 @@ StatChart.prototype.publish("tickFormat", ".2e", "string", "X-Axis Tick Format")
 StatChart.prototype.publish("mean", 0, "number", "Mean");
 StatChart.prototype.publish("standardDeviation", 0, "number", "Standard Deviation");
 StatChart.prototype.publish("quartiles", [0, 0, 0, 0, 0], "array", "Quartiles");
+
+export class NumericStatsWidget extends StyledTable {
+    constructor(row, dataWidth) {
+        super();
+
+        this
+            .tbodyColumnStyles([
+                { "font-weight": "bold", "text-align": "right", "width": "100px" },
+                { "font-weight": "normal", "width": dataWidth + "px" },
+                { "font-weight": "normal", "width": "auto" }
+            ])
+            .data([
+                ["Mean", row.numeric_mean, ""],
+                ["Std. Deviation", row.numeric_std_dev, ""],
+                ["", "", ""],
+                ["Quartiles", row.numeric_min, "Min"],
+                ["", row.numeric_lower_quartile, "25%"],
+                ["", row.numeric_median, "50%"],
+                ["", row.numeric_upper_quartile, "75%"],
+                ["", row.numeric_max, "Max"]
+            ])
+            ;
+    }
+}
+
+export class StringStatsWidget extends StyledTable {
+    constructor(row) {
+        super();
+        return new StyledTable()
+            .tbodyColumnStyles([
+                { "font-weight": "bold", "text-align": "right", "width": "100px" },
+                { "font-weight": "normal", "width": "auto" }
+            ])
+            .data([
+                ["Min Length", row.min_length],
+                ["Avg Length", row.ave_length],
+                ["Max Length", row.max_length]
+            ])
+            ;
+    }
+}
