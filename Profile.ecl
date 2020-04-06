@@ -177,7 +177,7 @@
  *                          argument is 1-100; values outside of this range
  *                          will be clamped; OPTIONAL, defaults to 100 (which
  *                          indicates that the entire dataset will be analyzed)
- * @param   lcbLimit        A positive integer (<= 500) indicating the maximum
+ * @param   lcbLimit        A positive integer (<= 1000) indicating the maximum
  *                          cardinality allowed for an attribute in order to
  *                          emit a breakdown of the attribute's values; this
  *                          parameter will be ignored if cardinality_breakdown
@@ -219,9 +219,9 @@ EXPORT Profile(inFile,
     #UNIQUENAME(trimmedFieldList);
     LOCAL %trimmedFieldList% := TRIM(fieldListStr, ALL);
 
-    // Clamp lcbLimit to 0..500
+    // Clamp lcbLimit to 0..1000
     #UNIQUENAME(lowCardinalityThreshold);
-    LOCAL %lowCardinalityThreshold% := MIN(MAX(lcbLimit, 0), 500);
+    LOCAL %lowCardinalityThreshold% := MIN(MAX(lcbLimit, 0), 1000);
 
     // The maximum number of mode values to return
     #UNIQUENAME(MAX_MODES);
