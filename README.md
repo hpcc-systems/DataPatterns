@@ -80,7 +80,7 @@ level, such as within your "My Files" folder.
 |1.6.1|Fix problem where large datasets with implicit numeric conversions ran out of memory during the final phase of profiling|
 |1.6.2|Fix issue where a record definition END would appear in the wrong place within BestRecordStructure(); remove BestRecordStructureFromPath() and ProfileFromPath() -- they never worked in all circumstances|
 |1.6.3|Fix issue where fields in the NewLayout record definition emitted by BestRecordStructure were out of order|
-|1.6.4||
+|1.6.4|Bump visualizer code, including dependencies, to latest versions; increase default lcbLimit value to 1000|
 
 <a name="profile"></a>
 ### Profile
@@ -265,7 +265,7 @@ Documentation as pulled from the beginning of Profile.ecl:
                              argument is 1-100; values outside of this range
                              will be clamped; OPTIONAL, defaults to 100 (which
                              indicates that the entire dataset will be analyzed)
-    @param   lcbLimit        A positive integer (<= 500) indicating the maximum
+    @param   lcbLimit        A positive integer (<= 1000) indicating the maximum
                              cardinality allowed for an attribute in order to
                              emit a breakdown of the attribute's values; this
                              parameter will be ignored if cardinality_breakdown
