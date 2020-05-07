@@ -1177,7 +1177,7 @@ EXPORT Profile(inFile,
         #UNIQUENAME(dataPatternStats);
         LOCAL %dataPatternStats% := TABLE
             (
-                DISTRIBUTE(%dataPatternStats0%, HASH32(attribute)),
+                %dataPatternStats0%,
                 {
                     attribute,
                     data_pattern,
@@ -1185,10 +1185,10 @@ EXPORT Profile(inFile,
                     UNSIGNED4   rec_count := SUM(GROUP, value_count)
                 },
                 attribute, data_pattern,
-                LOCAL
+                MERGE
             ) : ONWARNING(2168, IGNORE);
         #UNIQUENAME(groupedDataPatterns);
-        LOCAL %groupedDataPatterns% := GROUP(SORT(%dataPatternStats%, attribute, LOCAL), attribute, LOCAL);
+        LOCAL %groupedDataPatterns% := GROUP(SORT(DISTRIBUTE(%dataPatternStats%, HASH32(attribute)), attribute, LOCAL), attribute, LOCAL);
         #UNIQUENAME(topDataPatterns);
         LOCAL %topDataPatterns% := UNGROUP(TOPN(%groupedDataPatterns%, (UNSIGNED)_maxPatterns, -rec_count, data_pattern));
         #UNIQUENAME(rareDataPatterns0);

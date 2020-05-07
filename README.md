@@ -81,6 +81,7 @@ level, such as within your "My Files" folder.
 |1.6.2|Fix issue where a record definition END would appear in the wrong place within BestRecordStructure(); remove BestRecordStructureFromPath() and ProfileFromPath() -- they never worked in all circumstances|
 |1.6.3|Fix issue where fields in the NewLayout record definition emitted by BestRecordStructure were out of order|
 |1.6.4|Bump visualizer code, including dependencies, to latest versions; increase default lcbLimit value to 1000|
+|1.6.5|Significant performance boost (change TABLE() used for pattern gathering)|
 
 <a name="profile"></a>
 ### Profile
