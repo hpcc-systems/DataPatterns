@@ -12,10 +12,13 @@
  *          STRING      value;      // Value from profile results
  *      END;
  *
- * Child datasets from the profile results (modes, cardinality breakdowns,
- * text patterns, and correlations) are not copied to the normalized format.
  * The actual 'key' values that appear in these results will depend on which
  * 'features' were supplied to the profile call.
+ *
+ * The value for attributes with child datasets in the profile result is
+ * still a single string.  The string is composed of pipe ('|') delimited
+ * values from each child record, and those may further be delimited with
+ * colons if there are additional fields.
  *
  * Also, note that all profile values are coerced to STRING values.
  */
@@ -23,8 +26,10 @@ EXPORT NormalizeProfileResults(profileResults) := FUNCTIONMACRO
     LOADXML('<xml/>');
     #EXPORTXML(profileResultsFields, RECORDOF(profileResults));
     #UNIQUENAME(recLevel);
-    #UNIQUENAME(fieldNum);
-    #SET(fieldNum, 0);
+    #UNIQUENAME(fieldCount);
+    #SET(fieldCount, 0);
+
+    IMPORT Std;
 
     #UNIQUENAME(ResultRec);
     LOCAL %ResultRec% := RECORD
@@ -44,10 +49,15 @@ EXPORT NormalizeProfileResults(profileResults) := FUNCTIONMACRO
                     #FOR(Field)
                         #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
                             #SET(recLevel, %recLevel% + 1)
+                            #IF(%'@name'% IN ['popular_patterns', 'rare_patterns', 'modes', 'cardinality_breakdown', 'correlations'])
+                                #SET(fieldCount, %fieldCount% + 1)
+                                %'@name'%,
+                            #END
                         #ELSEIF(%{@isEnd}% = 1)
                             #SET(recLevel, %recLevel% - 1)
                         #ELSEIF(%recLevel% = 0)
                             #IF(%'@name'% != 'attribute')
+                                #SET(fieldCount, %fieldCount% + 1)
                                 %'@name'%,
                             #END
                         #END
@@ -63,16 +73,22 @@ EXPORT NormalizeProfileResults(profileResults) := FUNCTIONMACRO
                     #FOR(Field)
                         #IF(%{@isRecord}% = 1 OR %{@isDataset}% = 1)
                             #SET(recLevel, %recLevel% + 1)
+                            #IF(%'@name'% IN ['popular_patterns', 'rare_patterns'])
+                                Std.Str.CombineWords(SET(aRec.%@name%, TRIM(data_pattern) + ':' + (STRING)rec_count), '|'),
+                            #ELSEIF(%'@name'% IN ['modes', 'cardinality_breakdown'])
+                                Std.Str.CombineWords(SET(aRec.%@name%, TRIM(value) + ':' + (STRING)rec_count), '|'),
+                            #ELSEIF(%'@name'% = 'correlations')
+                                Std.Str.CombineWords(SET(aRec.%@name%, TRIM(attribute) + ':' + (STRING)corr), '|'),
+                            #END
                         #ELSEIF(%{@isEnd}% = 1)
                             #SET(recLevel, %recLevel% - 1)
                         #ELSEIF(%recLevel% = 0)
                             #IF(%'@name'% != 'attribute')
-                                #SET(fieldNum, %fieldNum% + 1)
                                 #IF(REGEXFIND('(boolean)', %'@type'%))
-                                    IF(aRec.%@name%, 'true', 'false')
+                                    IF(aRec.%@name%, 'true', 'false'),
                                 #ELSE
-                                    (STRING)aRec.%@name%
-                                #END,
+                                    (STRING)aRec.%@name%,
+                                #END
                             #END
                         #END
                     #END
@@ -82,7 +98,7 @@ EXPORT NormalizeProfileResults(profileResults) := FUNCTIONMACRO
     END;
 
     #UNIQUENAME(result);
-    LOCAL %result% := NORMALIZE(profileResults, %fieldNum%, %Xpose%(LEFT, COUNTER));
+    LOCAL %result% := NORMALIZE(profileResults, %fieldCount%, %Xpose%(LEFT, COUNTER));
 
     RETURN %result%;
 ENDMACRO;

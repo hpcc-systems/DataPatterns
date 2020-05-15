@@ -82,7 +82,7 @@ level, such as within your "My Files" folder.
 |1.6.3|Fix issue where fields in the NewLayout record definition emitted by BestRecordStructure were out of order|
 |1.6.4|Bump visualizer code, including dependencies, to latest versions; increase default lcbLimit value to 1000|
 |1.6.5|Significant (~75%) performance boost within the text pattern code  -- thanks to Manjunath Venkataswamy for finding the issue|
-|1.6.6||
+|1.6.6|NormalizeProfileResults() now shows results for attributes within child datasets (text patterns, correlations, etc)|
 
 <a name="profile"></a>
 ### Profile
@@ -343,8 +343,12 @@ is a dataset in the following format:
         STRING      value;      // Value from profile results
     END;
 
-Any child datasets from the profile results (modes, cardinality breakdowns,
-text patterns, and correlations) are not copied to the normalized format.
+Some profile results are represented with embedded child datasets (modes,
+cardinality breakdowns, text patterns, and correlations).  When normalizing,
+portions of these child datasets are converted to string values delimited
+by the '&#124;' character.  If records within the child dataset contain
+additional information, such as a record count, the additional information
+is delimited with a ':' character.
 
 Sample code:
 
@@ -362,9 +366,9 @@ Sample code:
 
 profileResults:
 
-|attribute|given\_attribute\_type|rec\_count|fill\_count|fill\_rate|cardinality|
+|attribute|given\_attribute\_type|rec\_count|fill\_count|fill\_rate|popular_patterns|
 |---|---|---|---|---|---|
-|field1|string|1000|1000|100|997|
+|field1|string|1000|1000|100|<table><tr><th>data\_patterns</th><th>rec_count</th></tr><tr><td>AAAAAA</td><td>10</td></tr><tr><td>AAA</td><td>5</td></tr></table>
 
 normalizedResults:
 
@@ -374,7 +378,7 @@ normalizedResults:
 |field1|rec\_count|1000|
 |field1|fill\_count|1000|
 |field1|fill\_rate|100|
-|field1|cardinality|997|
+|field1|popular_patterns|AAAAAA:10&#124;AAA:5|
 
 <a name="bestrecordstructure"></a>
 ### BestRecordStructure
