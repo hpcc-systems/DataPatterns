@@ -11,6 +11,7 @@ research tools to an ECL programmer.
   * [Summary Report with Graphs](#summary_report_with_graphs)
   * [NormalizeProfileResults()](#normalizeprofileresults)
   * [BestRecordStructure()](#bestrecordstructure)
+  * [Benford()](#benford)
   * [Testing](#testing)
 
 <a name="installation"></a>
@@ -82,7 +83,7 @@ level, such as within your "My Files" folder.
 |1.6.3|Fix issue where fields in the NewLayout record definition emitted by BestRecordStructure were out of order|
 |1.6.4|Bump visualizer code, including dependencies, to latest versions; increase default lcbLimit value to 1000|
 |1.6.5|Significant (~75%) performance boost within the text pattern code  -- thanks to Manjunath Venkataswamy for finding the issue|
-|1.6.6|NormalizeProfileResults() now shows results for attributes within child datasets (text patterns, correlations, etc)|
+|1.6.6|NormalizeProfileResults() now shows results for attributes within child datasets (text patterns, correlations, etc); addition of Benford() analysis function|
 
 <a name="profile"></a>
 ### Profile
@@ -300,8 +301,8 @@ https://play.hpccsystems.com:18010/WsWorkunits/res/W20190430-175856/report/res/i
 Simply swap out the host name and WUID in the URL with the WUID containing your
 Profile results to view your report.
 
-Every `attribute` in the Profile result is represented by a row of information. 
-Each row of information is organized into several columns. Here is a short description 
+Every `attribute` in the Profile result is represented by a row of information.
+Each row of information is organized into several columns. Here is a short description
 of each column:
 
 1. Type information, Cardinality Count & Filled Count
@@ -312,7 +313,7 @@ of each column:
 4. Cardinality Breakdown listed by count descending
     * only shown for attributes with `cardinality_breakdown` content
     * this column is omitted if the above condition fails for all attributes
-5. Popular Patterns 
+5. Popular Patterns
     * only shown for attributes with `popular_patterns` content
     * this column is omitted if the above condition fails for all attributes
 
@@ -359,7 +360,7 @@ Sample code:
     ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
 
     profileResults := DataPatterns.Profile(ds);
-    
+
     normalizedResults := DataPatterns.NormalizeProfileResults(profileResults);
 
     OUTPUT(normalizedResults, ALL, NAMED('normalizedResults'));
@@ -412,6 +413,57 @@ Note that, when outputing the result of `BestRecordStructure` to a workunit,
 it is a good idea to add an ALL flag to the OUTPUT function.  This ensures that
 all attributes will be displayed.  Otherwise, if you have more than 100
 attributes in the given dataset, the result will be truncated.
+
+<a name="benford"></a>
+### Benford
+
+Benford's law, also called the Newcomb–Benford law, the law of anomalous
+numbers, or the first-digit law, is an observation about the frequency
+distribution of leading digits in many real-life sets of numerical data.
+
+Benford's law doesn't apply to every set of numbers, but it usually applies
+to large sets of naturally occurring numbers with some connection like:
+
+* Companies' stock market values
+* Data found in texts — like the Reader's Digest, or a copy of Newsweek
+* Demographic data, including state and city populations
+* Income tax data
+* Mathematical tables, like logarithms
+* River drainage rates
+* Scientific data
+
+The law usually doesn't apply to data sets that have a stated minimum and
+maximum, like interest rates or hourly wages. If numbers are assigned,
+rather than naturally occurring, they will also not follow the law. Examples
+of assigned numbers include: zip codes, telephone numbers and Social
+Security numbers.
+
+For more information: https://en.wikipedia.org/wiki/Benford%27s_law
+
+Sample call:
+
+    IMPORT DataPatterns;
+
+    filePath := '~thor::stock_data_';
+
+    DataRec := RECORD
+        UNSIGNED4   trade_date;
+        STRING1     exchange_code;
+        STRING9     stock_symbol;
+        DECIMAL9_2  opening_price;
+        DECIMAL9_2  high_price;
+        DECIMAL9_2  low_price;
+        DECIMAL9_2  closing_price;
+        UNSIGNED4   shares_traded;
+        UNSIGNED4   share_value;
+    END;
+
+    ds := DATASET(filePath, DataRec, FLAT);
+
+    // Analyze only the opening_price and closing_price attributes
+    benfordResult := DataPatterns.Benford(ds, 'opening_price, closing_price');
+
+    OUTPUT(benfordResult, NAMED('benfordResult'), ALL);
 
 <a name="testing"></a>
 ### Testing
