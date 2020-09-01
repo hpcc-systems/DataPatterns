@@ -63,8 +63,6 @@
  *
  * The first row of the results will show the expected values for the named
  * digits, with "--EXPECTED--" showing as the attribute name.
- *
- * @see
  */
 EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
     #UNIQUENAME(recLevel);
