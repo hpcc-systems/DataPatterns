@@ -460,7 +460,7 @@ Sample call:
 
     ds := DATASET(filePath, DataRec, FLAT);
 
-    // Analyze only the opening_price, closing_price, and trade_date_ attributes
+    // Analyze only the opening_price, closing_price, and trade_date attributes
     benfordResult := DataPatterns.Benford(ds, 'opening_price, closing_price, trade_date');
 
     OUTPUT(benfordResult, NAMED('benfordResult'), ALL);
