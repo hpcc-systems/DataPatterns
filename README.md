@@ -460,10 +460,33 @@ Sample call:
 
     ds := DATASET(filePath, DataRec, FLAT);
 
-    // Analyze only the opening_price and closing_price attributes
-    benfordResult := DataPatterns.Benford(ds, 'opening_price, closing_price');
+    // Analyze only the opening_price, closing_price, and trade_date_ attributes
+    benfordResult := DataPatterns.Benford(ds, 'opening_price, closing_price, trade_date');
 
     OUTPUT(benfordResult, NAMED('benfordResult'), ALL);
+
+The result would look something like the following:
+
+|attribute|one|two|three|four|five|six|seven|eight|nine|chi\_squared|
+|---|---|---|---|---|---|---|---|---|---|---|
+|--EXPECTED--|30.1|17.6|12.5|9.7|7.9|6.7|5.8|5.1|4.6|20.09|
+|opening\_price|30.4|19.2|12.9|9.6|7.3|5.8|4.9|4.3|3.8|0.733|
+|closing\_price|30.4|19.2|12.9|9.6|7.3|5.8|4.9|4.3|3.8|0.733|
+|trade\_date|0|100|0|0|0|0|0|0|0|68.182|
+
+The result contains the attribute name, the distribution of each non-zero first digit as a
+percentage, and a chi-squared computation indicating how well that attribute adheres
+to Benford's Law.
+
+The first row of the results has an attribute named "--EXPECTED--" and the entire row is static.
+The values for the digit columns represent the expected distribution, as per Benford's Law.
+The chi\_squared column represents the critical value for a chi-squared test.  If an
+attribute's chi\_squared value is greater than the expected chi\_squared value then that
+attribute does not follow Benford's Law.
+
+In the above example, the trade\_date attribute fails the chi-squared test, as 68.182 > 20.09.
+This makes sense, because the data in that attribute is a date in YYYYMMDD format represented
+as an unsigned integer, and the dataset contains stock data for only the past few years.
 
 <a name="testing"></a>
 ### Testing
