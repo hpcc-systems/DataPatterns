@@ -107,10 +107,6 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
             TABLE(%sampledData%, {#EXPAND(%trimmedFieldList%)})
         #END;
 
-    // Grab the total record count
-    #UNIQUENAME(inFileRecCount);
-    LOCAL %inFileRecCount% := COUNT(%workingInFile%);
-
     #EXPORTXML(inFileFields, RECORDOF(%workingInFile%));
 
     // Helper function that returns the first non-zero digit in a string
@@ -181,19 +177,19 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
                     #SET(fieldNum, %fieldNum% + 1)
                     + TABLE
                         (
-                            %workingInFile%,
+                            %workingInFile%((INTEGER)%@name% != 0),
                             {
                                 UNSIGNED2   %idField% := %fieldNum%,
                                 STRING64    attribute := %'@name'%,
-                                DECIMAL4_1  one := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 1) / %inFileRecCount% * 100,
-                                DECIMAL4_1  two := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 2) / %inFileRecCount% * 100,
-                                DECIMAL4_1  three := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 3) / %inFileRecCount% * 100,
-                                DECIMAL4_1  four := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 4) / %inFileRecCount% * 100,
-                                DECIMAL4_1  five := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 5) / %inFileRecCount% * 100,
-                                DECIMAL4_1  six := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 6) / %inFileRecCount% * 100,
-                                DECIMAL4_1  seven := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 7) / %inFileRecCount% * 100,
-                                DECIMAL4_1  eight := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 8) / %inFileRecCount% * 100,
-                                DECIMAL4_1  nine := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 9) / %inFileRecCount% * 100,
+                                DECIMAL4_1  one := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 1) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  two := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 2) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  three := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 3) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  four := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 4) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  five := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 5) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  six := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 6) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  seven := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 7) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  eight := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 8) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  nine := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 9) / COUNT(GROUP) * 100,
                                 DECIMAL5_3  chi_squared := 0 // Fill in later
                             },
                             MERGE
