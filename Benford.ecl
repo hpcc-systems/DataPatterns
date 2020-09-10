@@ -25,7 +25,10 @@
  * This function computes the distribution of non-zero significant digits
  * within one or more attributes in a dataset and displays the result, one
  * attribute per row, with an "expected" row showing the expected
- * distributions.
+ * distributions.  Included in each row is a chi-squared computation for that
+ * row indicating how well the computed result matches the expected result
+ * (if the chi-squared value exceeds the one shown in the --EXPEECTED-- row
+ * then the row DOES NOT follow Benford's Law).
  *
  * @param   inFile          The dataset to process; REQUIRED
  * @param   fieldListStr    A string containing a comma-delimited list of
@@ -46,15 +49,16 @@
  *
  *          RECORD
  *              STRING64    attribute;
- *              DECIMAL5_2  one;
- *              DECIMAL5_2  two;
- *              DECIMAL5_2  three;
- *              DECIMAL5_2  four;
- *              DECIMAL5_2  five;
- *              DECIMAL5_2  six;
- *              DECIMAL5_2  seven;
- *              DECIMAL5_2  eight;
- *              DECIMAL5_2  nine;
+ *              DECIMAL4_1  one;
+ *              DECIMAL4_1  two;
+ *              DECIMAL4_1  three;
+ *              DECIMAL4_1  four;
+ *              DECIMAL4_1  five;
+ *              DECIMAL4_1  six;
+ *              DECIMAL4_1  seven;
+ *              DECIMAL4_1  eight;
+ *              DECIMAL4_1  nine;
+ *              DECIMAL5_3  chi_squared;
  *          END;
  *
  * The named digit fields (e.g. "one" and "two" and so on) represent the
@@ -65,8 +69,11 @@
  * digits, with "--EXPECTED--" showing as the attribute name.
  */
 EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
-    #UNIQUENAME(recLevel);
-    #UNIQUENAME(fieldNum);
+    // Chi-squared critical values for 8 degrees of freedom at various probabilities
+    // Probability:     0.90    0.95    0.975   0.99    0.999
+    // Critical value:  13.362  15.507  17.535  20.090  26.125
+    #UNIQUENAME(CHI_SQUARED_CRITICAL_VALUE);
+    #SET(CHI_SQUARED_CRITICAL_VALUE, 20.090); // 99% probability
 
     // Remove all spaces from field list so we can parse it more easily
     #UNIQUENAME(trimmedFieldList);
@@ -128,27 +135,41 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
         return v;
     ENDEMBED;
 
+    // Temp field name we will use to ensure proper ordering of results
     #UNIQUENAME(idField);
+
+    // One-record dataset containing expected Benford results, per-digit
+    #UNIQUENAME(expectedDS);
+    LOCAL %expectedDS% := DATASET
+        (
+            [{0, '--EXPECTED--', 30.1, 17.6, 12.5, 9.7, 7.9, 6.7, 5.8, 5.1, 4.6, 0}],
+            {
+                UNSIGNED2   %idField%,
+                STRING64    attribute,
+                DECIMAL4_1  one,
+                DECIMAL4_1  two,
+                DECIMAL4_1  three,
+                DECIMAL4_1  four,
+                DECIMAL4_1  five,
+                DECIMAL4_1  six,
+                DECIMAL4_1  seven,
+                DECIMAL4_1  eight,
+                DECIMAL4_1  nine,
+                DECIMAL5_3  chi_squared
+            }
+        );
+
+    // This will be used later as a datatype in a function signature
+    #UNIQUENAME(DataRec);
+    LOCAL %DataRec% := RECORDOF(%expectedDS%);
+
+    // Create a dataset composed of the expectedDS and a row for each
+    // field we will be processing
     #UNIQUENAME(interimResult);
-    LOCAL %interimResult% :=
-        DATASET
-            (
-                [{0, '--EXPECTED--', 30.1, 17.6, 12.5, 9.7, 7.9, 6.7, 5.8, 5.1, 4.6}],
-                {
-                    UNSIGNED2   %idField%,
-                    STRING64    attribute,
-                    DECIMAL5_2  one,
-                    DECIMAL5_2  two,
-                    DECIMAL5_2  three,
-                    DECIMAL5_2  four,
-                    DECIMAL5_2  five,
-                    DECIMAL5_2  six,
-                    DECIMAL5_2  seven,
-                    DECIMAL5_2  eight,
-                    DECIMAL5_2  nine
-                }
-            )
+    LOCAL %interimResult% := %expectedDS%
+        #UNIQUENAME(recLevel)
         #SET(recLevel, 0)
+        #UNIQUENAME(fieldNum)
         #SET(fieldNum, 0)
         #FOR(inFileFields)
             #FOR(Field)
@@ -164,15 +185,16 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
                             {
                                 UNSIGNED2   %idField% := %fieldNum%,
                                 STRING64    attribute := %'@name'%,
-                                DECIMAL5_2  one := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 1) / %inFileRecCount% * 100,
-                                DECIMAL5_2  two := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 2) / %inFileRecCount% * 100,
-                                DECIMAL5_2  three := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 3) / %inFileRecCount% * 100,
-                                DECIMAL5_2  four := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 4) / %inFileRecCount% * 100,
-                                DECIMAL5_2  five := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 5) / %inFileRecCount% * 100,
-                                DECIMAL5_2  six := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 6) / %inFileRecCount% * 100,
-                                DECIMAL5_2  seven := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 7) / %inFileRecCount% * 100,
-                                DECIMAL5_2  eight := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 8) / %inFileRecCount% * 100,
-                                DECIMAL5_2  nine := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 9) / %inFileRecCount% * 100
+                                DECIMAL4_1  one := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 1) / %inFileRecCount% * 100,
+                                DECIMAL4_1  two := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 2) / %inFileRecCount% * 100,
+                                DECIMAL4_1  three := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 3) / %inFileRecCount% * 100,
+                                DECIMAL4_1  four := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 4) / %inFileRecCount% * 100,
+                                DECIMAL4_1  five := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 5) / %inFileRecCount% * 100,
+                                DECIMAL4_1  six := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 6) / %inFileRecCount% * 100,
+                                DECIMAL4_1  seven := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 7) / %inFileRecCount% * 100,
+                                DECIMAL4_1  eight := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 8) / %inFileRecCount% * 100,
+                                DECIMAL4_1  nine := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 9) / %inFileRecCount% * 100,
+                                DECIMAL5_3  chi_squared := 0 // Fill in later
                             },
                             MERGE
                         )
@@ -180,10 +202,39 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
             #END
         #END;
 
+    // Helper function for computing chi-squared values from the interim results
+    #UNIQUENAME(ComputeChiSquared);
+    LOCAL %ComputeChiSquared%(%DataRec% expected, %DataRec% actual) := FUNCTION
+        Term(DECIMAL4_1 e, DECIMAL4_1 o) := ((o - e) * (o - e)) / e;
+
+        RETURN Term(expected.one, actual.one)
+                + Term(expected.two, actual.two)
+                + Term(expected.three, actual.three)
+                + Term(expected.four, actual.four)
+                + Term(expected.five, actual.five)
+                + Term(expected.six, actual.six)
+                + Term(expected.seven, actual.seven)
+                + Term(expected.eight, actual.eight)
+                + Term(expected.nine, actual.nine);
+    END;
+
+    // Insert the chi-squared results
+    #UNIQUENAME(chiSquaredResult);
+    LOCAL %chiSquaredResult% := PROJECT
+        (
+            %interimResult%,
+            TRANSFORM
+                (
+                    RECORDOF(LEFT),
+                    SELF.chi_squared := IF(LEFT.%idField% > 0, %ComputeChiSquared%(%expectedDS%[1], LEFT), %CHI_SQUARED_CRITICAL_VALUE%),
+                    SELF := LEFT
+                )
+        );
+
     // Sort by the ID field to put everything in the proper order, and remove the ID
     // field from the final result
     #UNIQUENAME(finalResult);
-    LOCAL %finalResult% := PROJECT(SORT(%interimResult%, %idField%), {RECORDOF(%interimResult%) - [%idField%]});
+    LOCAL %finalResult% := PROJECT(SORT(%chiSquaredResult%, %idField%), {RECORDOF(%chiSquaredResult%) - [%idField%]});
 
     RETURN %finalResult%;
 ENDMACRO;
