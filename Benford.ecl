@@ -49,6 +49,7 @@
  *
  *          RECORD
  *              STRING64    attribute;
+ *              UNSIGNED8   num_values;
  *              DECIMAL4_1  one;
  *              DECIMAL4_1  two;
  *              DECIMAL4_1  three;
@@ -63,10 +64,13 @@
  *
  * The named digit fields (e.g. "one" and "two" and so on) represent the
  * non-zero leading digits found in the associated attribute.  The values
- * that appear there are percentages.
+ * that appear there are percentages.  num_values shows the number of
+ * non-zero values processed, and chi_squared shows the result of applying
+ * that test using the observed vs expected distribution values.
  *
  * The first row of the results will show the expected values for the named
- * digits, with "--EXPECTED--" showing as the attribute name.
+ * digits, with "--EXPECTED--" showing as the attribute name.  num_values,
+ * in that row, shows the total number of records processed.
  */
 EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
     // Chi-squared critical values for 8 degrees of freedom at various probabilities
@@ -138,10 +142,11 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
     #UNIQUENAME(expectedDS);
     LOCAL %expectedDS% := DATASET
         (
-            [{0, '--EXPECTED--', 30.1, 17.6, 12.5, 9.7, 7.9, 6.7, 5.8, 5.1, 4.6, 0}],
+            [{0, '--EXPECTED--', COUNT(%workingInFile%), 30.1, 17.6, 12.5, 9.7, 7.9, 6.7, 5.8, 5.1, 4.6, 0}],
             {
                 UNSIGNED2   %idField%,
                 STRING64    attribute,
+                UNSIGNED8   num_values,
                 DECIMAL4_1  one,
                 DECIMAL4_1  two,
                 DECIMAL4_1  three,
@@ -181,6 +186,7 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
                             {
                                 UNSIGNED2   %idField% := %fieldNum%,
                                 STRING64    attribute := %'@name'%,
+                                UNSIGNED8   num_values := COUNT(GROUP),
                                 DECIMAL4_1  one := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 1) / COUNT(GROUP) * 100,
                                 DECIMAL4_1  two := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 2) / COUNT(GROUP) * 100,
                                 DECIMAL4_1  three := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 3) / COUNT(GROUP) * 100,

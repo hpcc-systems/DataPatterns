@@ -467,18 +467,20 @@ Sample call:
 
 The result would look something like the following:
 
-|attribute|one|two|three|four|five|six|seven|eight|nine|chi\_squared|
-|---|---|---|---|---|---|---|---|---|---|---|
-|--EXPECTED--|30.1|17.6|12.5|9.7|7.9|6.7|5.8|5.1|4.6|20.09|
-|opening\_price|30.4|19.2|12.9|9.6|7.3|5.8|4.9|4.3|3.8|0.733|
-|closing\_price|30.4|19.2|12.9|9.6|7.3|5.8|4.9|4.3|3.8|0.733|
-|trade\_date|0|100|0|0|0|0|0|0|0|68.182|
+|attribute|num_values|one|two|three|four|five|six|seven|eight|nine|chi_squared|
+|---|---|---|---|---|---|---|---|---|---|---|---|
+|--EXPECTED--|20959177|30.1|17.6|12.5|9.7|7.9|6.7|5.8|5.1|4.6|20.09|
+|opening_price|19082595|31.7|20|13.3|9.7|7.2|5.7|4.8|4.1|3.6|1.266|
+|closing_price|19083933|31.7|20|13.3|9.7|7.2|5.7|4.8|4|3.6|1.307|
+|trade_date|20959177|0|100|0|0|0|0|0|0|0|68.182|
 
-The result contains the attribute name, the distribution of each non-zero first digit as a
-percentage, and a chi-squared computation indicating how well that attribute adheres
-to Benford's Law.
+The result contains the attribute name, a count of valuees, the distribution of each
+non-zero first digit as a percentage, and a chi-squared computation indicating how well
+that attribute adheres to Benford's Law.
 
 The first row of the results has an attribute named "--EXPECTED--" and the entire row is static.
+The num\_values column in that row indicates the number of rows processed in the dataset (in
+the other rows, num\_values indicates the number of non-zero values).
 The values for the digit columns represent the expected distribution, as per Benford's Law.
 The chi\_squared column represents the critical value for a chi-squared test.  If an
 attribute's chi\_squared value is greater than the expected chi\_squared value then that
