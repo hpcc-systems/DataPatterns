@@ -58,7 +58,7 @@
  *              DECIMAL4_1  seven;
  *              DECIMAL4_1  eight;
  *              DECIMAL4_1  nine;
- *              DECIMAL5_3  chi_squared;
+ *              DECIMAL7_3  chi_squared;
  *              UNSIGNED8   num_values;
  *          END;
  *
@@ -154,7 +154,7 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
                 DECIMAL4_1  seven,
                 DECIMAL4_1  eight,
                 DECIMAL4_1  nine,
-                DECIMAL5_3  chi_squared,
+                DECIMAL7_3  chi_squared,
                 UNSIGNED8   num_values,
                 STRING      attribute
             }
@@ -194,7 +194,7 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
                                 DECIMAL4_1  seven := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 7) / COUNT(GROUP) * 100,
                                 DECIMAL4_1  eight := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 8) / COUNT(GROUP) * 100,
                                 DECIMAL4_1  nine := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 9) / COUNT(GROUP) * 100,
-                                DECIMAL5_3  chi_squared := 0, // Fill in later
+                                DECIMAL7_3  chi_squared := 0, // Fill in later
                                 UNSIGNED8   num_values := COUNT(GROUP),
                                 STRING      attribute := %'@name'%
                             },
