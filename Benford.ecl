@@ -27,7 +27,7 @@
  * attribute per row, with an "expected" row showing the expected
  * distributions.  Included in each row is a chi-squared computation for that
  * row indicating how well the computed result matches the expected result
- * (if the chi-squared value exceeds the one shown in the --EXPEECTED-- row
+ * (if the chi-squared value exceeds the one shown in the --EXPECTED-- row
  * then the row DOES NOT follow Benford's Law).
  *
  * @param   inFile          The dataset to process; REQUIRED
