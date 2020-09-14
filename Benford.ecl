@@ -156,7 +156,7 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
                 DECIMAL4_1  nine,
                 DECIMAL7_3  chi_squared,
                 UNSIGNED8   num_values,
-                STRING      attribute
+                STRING      attribute // Put this at the end for now, because it is variable-length
             }
         );
 
@@ -233,8 +233,8 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
                 )
         );
 
-    // Sort by the ID field to put everything in the proper order, and remove the ID
-    // field from the final result
+    // Sort by the ID field to put everything in the proper order, move the attribute field to be
+    // the first field, and remove the ID field from the final result
     #UNIQUENAME(finalResult);
     LOCAL %finalResult% := PROJECT(SORT(%chiSquaredResult%, %idField%), {STRING attribute, RECORDOF(%chiSquaredResult%) - [%idField%, attribute]});
 
