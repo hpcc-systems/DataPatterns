@@ -48,8 +48,7 @@
  * @return  A new dataset with the following record structure:
  *
  *          RECORD
- *              STRING64    attribute;
- *              UNSIGNED8   num_values;
+ *              STRING      attribute;
  *              DECIMAL4_1  one;
  *              DECIMAL4_1  two;
  *              DECIMAL4_1  three;
@@ -60,6 +59,7 @@
  *              DECIMAL4_1  eight;
  *              DECIMAL4_1  nine;
  *              DECIMAL5_3  chi_squared;
+ *              UNSIGNED8   num_values;
  *          END;
  *
  * The named digit fields (e.g. "one" and "two" and so on) represent the
@@ -142,11 +142,9 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
     #UNIQUENAME(expectedDS);
     LOCAL %expectedDS% := DATASET
         (
-            [{0, '--EXPECTED--', COUNT(%workingInFile%), 30.1, 17.6, 12.5, 9.7, 7.9, 6.7, 5.8, 5.1, 4.6, 0}],
+            [{0, 30.1, 17.6, 12.5, 9.7, 7.9, 6.7, 5.8, 5.1, 4.6, 0, COUNT(%workingInFile%), '--EXPECTED--'}],
             {
                 UNSIGNED2   %idField%,
-                STRING64    attribute,
-                UNSIGNED8   num_values,
                 DECIMAL4_1  one,
                 DECIMAL4_1  two,
                 DECIMAL4_1  three,
@@ -156,7 +154,9 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
                 DECIMAL4_1  seven,
                 DECIMAL4_1  eight,
                 DECIMAL4_1  nine,
-                DECIMAL5_3  chi_squared
+                DECIMAL5_3  chi_squared,
+                UNSIGNED8   num_values,
+                STRING      attribute
             }
         );
 
@@ -185,8 +185,6 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
                             %workingInFile%((INTEGER)%@name% != 0),
                             {
                                 UNSIGNED2   %idField% := %fieldNum%,
-                                STRING64    attribute := %'@name'%,
-                                UNSIGNED8   num_values := COUNT(GROUP),
                                 DECIMAL4_1  one := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 1) / COUNT(GROUP) * 100,
                                 DECIMAL4_1  two := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 2) / COUNT(GROUP) * 100,
                                 DECIMAL4_1  three := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 3) / COUNT(GROUP) * 100,
@@ -196,7 +194,9 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
                                 DECIMAL4_1  seven := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 7) / COUNT(GROUP) * 100,
                                 DECIMAL4_1  eight := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 8) / COUNT(GROUP) * 100,
                                 DECIMAL4_1  nine := COUNT(GROUP, %FirstDigit%((STRING)%@name%) = 9) / COUNT(GROUP) * 100,
-                                DECIMAL5_3  chi_squared := 0 // Fill in later
+                                DECIMAL5_3  chi_squared := 0, // Fill in later
+                                UNSIGNED8   num_values := COUNT(GROUP),
+                                STRING      attribute := %'@name'%
                             },
                             MERGE
                         )
@@ -236,7 +236,7 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
     // Sort by the ID field to put everything in the proper order, and remove the ID
     // field from the final result
     #UNIQUENAME(finalResult);
-    LOCAL %finalResult% := PROJECT(SORT(%chiSquaredResult%, %idField%), {RECORDOF(%chiSquaredResult%) - [%idField%]});
+    LOCAL %finalResult% := PROJECT(SORT(%chiSquaredResult%, %idField%), {STRING attribute, RECORDOF(%chiSquaredResult%) - [%idField%, attribute]});
 
     RETURN %finalResult%;
 ENDMACRO;
