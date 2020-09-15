@@ -83,7 +83,7 @@ level, such as within your "My Files" folder.
 |1.6.3|Fix issue where fields in the NewLayout record definition emitted by BestRecordStructure were out of order|
 |1.6.4|Bump visualizer code, including dependencies, to latest versions; increase default lcbLimit value to 1000|
 |1.6.5|Significant (~75%) performance boost within the text pattern code  -- thanks to Manjunath Venkataswamy for finding the issue|
-|1.6.6|NormalizeProfileResults() now shows results for attributes within child datasets (text patterns, correlations, etc); addition of Benford() analysis function|
+|1.6.6|NormalizeProfileResults() now shows results for attributes within child datasets (text patterns, correlations, etc); addition of Benford() analysis function; add workaround to allow a child dataset to be cited in a fieldListStr argument in Profile()|
 
 <a name="profile"></a>
 ### Profile
@@ -215,9 +215,7 @@ Documentation as pulled from the beginning of Profile.ecl:
     @param   inFile          The dataset to process; this could be a child
                              dataset (e.g. inFile.childDS); REQUIRED
     @param   fieldListStr    A string containing a comma-delimited list of
-                             attribute names to process; note that attributes
-                             listed here must be scalar datatypes (not child
-                             records or child datasets); use an empty string to
+                             attribute names to process; use an empty string to
                              process all attributes in inFile; OPTIONAL,
                              defaults to an empty string
     @param   maxPatterns     The maximum number of patterns (both popular and
