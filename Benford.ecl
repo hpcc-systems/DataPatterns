@@ -25,10 +25,10 @@
  * This function computes the distribution of non-zero significant digits
  * within one or more attributes in a dataset and displays the result, one
  * attribute per row, with an "expected" row showing the expected
- * distributions.  Included in each row is a chi-squared computation for that
- * row indicating how well the computed result matches the expected result
+ * distributions.  Included in each data row is a chi-squared computation for
+ * that row indicating how well the computed result matches the expected result
  * (if the chi-squared value exceeds the one shown in the --EXPECTED-- row
- * then the row DOES NOT follow Benford's Law).
+ * then the data row DOES NOT follow Benford's Law).
  *
  * @param   inFile          The dataset to process; REQUIRED
  * @param   fieldListStr    A string containing a comma-delimited list of
@@ -43,24 +43,24 @@
  *                          analysis is sufficient; valid range for this
  *                          argument is 1-100; values outside of this range
  *                          will be clamped; OPTIONAL, defaults to 100 (which
- *                          indicates that the entire dataset will be analyzed)
+ *                          indicates that all rows in the dataset will be used)
  *
  * @return  A new dataset with the following record structure:
  *
- *          RECORD
- *              STRING      attribute;
- *              DECIMAL4_1  one;
- *              DECIMAL4_1  two;
- *              DECIMAL4_1  three;
- *              DECIMAL4_1  four;
- *              DECIMAL4_1  five;
- *              DECIMAL4_1  six;
- *              DECIMAL4_1  seven;
- *              DECIMAL4_1  eight;
- *              DECIMAL4_1  nine;
- *              DECIMAL7_3  chi_squared;
- *              UNSIGNED8   num_values;
- *          END;
+ *      RECORD
+ *          STRING      attribute;   // Name of data attribute examined
+ *          DECIMAL4_1  one;         // Percentage of rows with significant digit of '1'
+ *          DECIMAL4_1  two;         // Percentage of rows with significant digit of '2'
+ *          DECIMAL4_1  three;       // Percentage of rows with significant digit of '3'
+ *          DECIMAL4_1  four;        // Percentage of rows with significant digit of '4'
+ *          DECIMAL4_1  five;        // Percentage of rows with significant digit of '5'
+ *          DECIMAL4_1  six;         // Percentage of rows with significant digit of '6'
+ *          DECIMAL4_1  seven;       // Percentage of rows with significant digit of '7'
+ *          DECIMAL4_1  eight;       // Percentage of rows with significant digit of '8'
+ *          DECIMAL4_1  nine;        // Percentage of rows with significant digit of '9'
+ *          DECIMAL7_3  chi_squared; // Chi-squared "fitness test" result
+ *          UNSIGNED8   num_values;  // Number of rows with non-zero values for this attribute
+ *      END;
  *
  * The named digit fields (e.g. "one" and "two" and so on) represent the
  * non-zero leading digits found in the associated attribute.  The values
@@ -81,7 +81,7 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', sampleSize = 100) := FUNCTIONMACRO
 
     // Remove all spaces from field list so we can parse it more easily
     #UNIQUENAME(trimmedFieldList);
-    LOCAL %trimmedFieldList% := TRIM(fieldListStr, ALL);
+    LOCAL %trimmedFieldList% := TRIM((STRING)fieldListStr, ALL);
 
     // Ungroup the given dataset, in case it was grouped
     #UNIQUENAME(ungroupedInFile);
