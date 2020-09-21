@@ -94,6 +94,9 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', digit = 1, sampleSize = 100) := FU
     #UNIQUENAME(clampedDigit);
     LOCAL %clampedDigit% := MIN(%minDigit%, 4);
 
+    // Chi-squared critical value table:
+    // https://www.itl.nist.gov/div898/handbook/eda/section3/eda3674.htm
+
     // Chi-squared critical values for 8 degrees of freedom at various probabilities
     // Probability:     0.90    0.95    0.975   0.99    0.999
     // Critical value:  13.362  15.507  17.535  20.090  26.125
