@@ -415,9 +415,9 @@ attributes in the given dataset, the result will be truncated.
 <a name="benford"></a>
 ### Benford
 
-Benford's law, also called the Newcomb–Benford law, the law of anomalous
-numbers, or the first-digit law, is an observation about the frequency
-distribution of leading digits in many real-life sets of numerical data.
+Benford's law, also called the Newcomb–Benford law, or the law of anomalous
+numbers, is an observation about the frequency distribution of leading digits
+in many real-life sets of numerical data.
 
 Benford's law doesn't apply to every set of numbers, but it usually applies
 to large sets of naturally occurring numbers with some connection like:
@@ -437,6 +437,61 @@ of assigned numbers include: zip codes, telephone numbers and Social
 Security numbers.
 
 For more information: https://en.wikipedia.org/wiki/Benford%27s_law
+
+Documentation as pulled from the beginning of Benford.ecl:
+
+    Note that when computing the distribution of the most significant digit,
+    the digit zero is ignored.  So for instance, the values 0100, 100, 1.0,
+    0.10, and 0.00001 all have a most-significant digit of '1'.  The digit
+    zero is considered for all other positions.
+
+    @param   inFile          The dataset to process; REQUIRED
+    @param   fieldListStr    A string containing a comma-delimited list of
+                             attribute names to process; note that attributes
+                             listed here must be top-level attributes (not child
+                             records or child datasets); use an empty string to
+                             process all top-level attributes in inFile;
+                             OPTIONAL, defaults to an empty string
+    @param   digit           The 1-based digit within the number to examine; the
+                             first significant digit is '1' and it only increases;
+                             OPTIONAL, defaults to 1, meaning the most-significant
+                             non-zero digit
+    @param   sampleSize      A positive integer representing a percentage of
+                             inFile to examine, which is useful when analyzing a
+                             very large dataset and only an estimated data
+                             analysis is sufficient; valid range for this
+                             argument is 1-100; values outside of this range
+                             will be clamped; OPTIONAL, defaults to 100 (which
+                             indicates that all rows in the dataset will be used)
+
+    @return  A new dataset with the following record structure:
+
+         RECORD
+             STRING      attribute;   // Name of data attribute examined
+             DECIMAL4_1  zero;        // Percentage of rows with digit of '0'
+             DECIMAL4_1  one;         // Percentage of rows with digit of '1'
+             DECIMAL4_1  two;         // Percentage of rows with digit of '2'
+             DECIMAL4_1  three;       // Percentage of rows with digit of '3'
+             DECIMAL4_1  four;        // Percentage of rows with digit of '4'
+             DECIMAL4_1  five;        // Percentage of rows with digit of '5'
+             DECIMAL4_1  six;         // Percentage of rows with digit of '6'
+             DECIMAL4_1  seven;       // Percentage of rows with digit of '7'
+             DECIMAL4_1  eight;       // Percentage of rows with digit of '8'
+             DECIMAL4_1  nine;        // Percentage of rows with digit of '9'
+             DECIMAL7_3  chi_squared; // Chi-squared "fitness test" result
+             UNSIGNED8   num_values;  // Number of rows with non-zero values for this attribute
+         END;
+
+    The named digit fields (e.g. "zero" and "one" and so on) represent the
+    digit found in the 'digit' position of the associated attribute.  The values
+    that appear there are percentages.  num_values shows the number of
+    non-zero values processed, and chi_squared shows the result of applying
+    that test using the observed vs expected distribution values.
+
+    The first row of the results will show the expected values for the named
+    digits, with "-- EXPECTED DIGIT n --" showing as the attribute name.'n' will
+    be replaced with the value of 'digit' which indicates which digit position
+    was examined.
 
 Sample call:
 
@@ -465,21 +520,21 @@ Sample call:
 
 The result would look something like the following:
 
-|attribute|num_values|one|two|three|four|five|six|seven|eight|nine|chi_squared|
-|---|---|---|---|---|---|---|---|---|---|---|---|
-|--EXPECTED--|20959177|30.1|17.6|12.5|9.7|7.9|6.7|5.8|5.1|4.6|20.09|
-|opening_price|19082595|31.7|20|13.3|9.7|7.2|5.7|4.8|4.1|3.6|1.266|
-|closing_price|19083933|31.7|20|13.3|9.7|7.2|5.7|4.8|4|3.6|1.307|
-|trade_date|20959177|0|100|0|0|0|0|0|0|0|68.182|
+|attribute|zero|one|two|three|four|five|six|seven|eight|nine|chi_squared|num_values|
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+|-- EXPECTED DIGIT 1 --|-1|30.1|17.6|12.5|9.7|7.9|6.7|5.8|5.1|4.6|20.09|20959177|
+|opening_price|-1|31.7|20|13.3|9.7|7.2|5.7|4.8|4.1|3.6|1.266|19082595|
+|closing_price|-1|31.7|20|13.3|9.7|7.2|5.7|4.8|4|3.6|1.307|19083933|
+|trade_date|-1|0|100|0|0|0|0|0|0|0|468.182|20959177|
 
-The result contains the attribute name, a count of valuees, the distribution of each
-non-zero first digit as a percentage, and a chi-squared computation indicating how well
-that attribute adheres to Benford's Law.
+The result contains the attribute name, expected and actual distributions of the digit
+as a percentage, the chi-squared computation indicating how well that attribute
+adheres to Benford's Law, and the number of records actually considered.
 
-The first row of the results has an attribute named "--EXPECTED--" and the entire row is static.
-The num\_values column in that row indicates the number of rows processed in the dataset (in
-the other rows, num\_values indicates the number of non-zero values).
-The values for the digit columns represent the expected distribution, as per Benford's Law.
+By definition, the most-significant digit will never be zero.  Therefore, when computing the
+distribution of the most-significant digit, the 'zero' field will show -1 for all
+attributes in the result.
+
 The chi\_squared column represents the critical value for a chi-squared test.  If an
 attribute's chi\_squared value is greater than the expected chi\_squared value then that
 attribute does not follow Benford's Law.
