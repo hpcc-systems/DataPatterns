@@ -87,17 +87,27 @@
  * the 'zero' field will show a -1 value, indicating that it was ignored.
  */
 EXPORT Benford(inFile, fieldListStr = '\'\'', digit = 1, sampleSize = 100) := FUNCTIONMACRO
-    // Chi-squared critical values for 8 degrees of freedom at various probabilities
-    // Probability:     0.90    0.95    0.975   0.99    0.999
-    // Critical value:  13.362  15.507  17.535  20.090  26.125
-    #UNIQUENAME(CHI_SQUARED_CRITICAL_VALUE);
-    #SET(CHI_SQUARED_CRITICAL_VALUE, 20.090); // 99% probability
 
     #UNIQUENAME(minDigit);
     LOCAL %minDigit% := MAX((INTEGER)digit, 1);
 
     #UNIQUENAME(clampedDigit);
     LOCAL %clampedDigit% := MIN(%minDigit%, 4);
+
+    // Chi-squared critical values for 8 degrees of freedom at various probabilities
+    // Probability:     0.90    0.95    0.975   0.99    0.999
+    // Critical value:  13.362  15.507  17.535  20.090  26.125
+    #UNIQUENAME(CHI_SQUARED_CRITICAL_VALUE_1);
+    #SET(CHI_SQUARED_CRITICAL_VALUE_1, 20.090); // 99% probability
+
+    // Chi-squared critical values for 9 degrees of freedom at various probabilities
+    // Probability:     0.90    0.95    0.975   0.99    0.999
+    // Critical value:  14.684  16.919  19.023  21.666  27.877
+    #UNIQUENAME(CHI_SQUARED_CRITICAL_VALUE_2);
+    #SET(CHI_SQUARED_CRITICAL_VALUE_2, 21.666); // 99% probability
+
+    #UNIQUENAME(CHI_SQUARED_CRITICAL_VALUE);
+    LOCAL %CHI_SQUARED_CRITICAL_VALUE% := IF(%clampedDigit% = 1, %CHI_SQUARED_CRITICAL_VALUE_1%, %CHI_SQUARED_CRITICAL_VALUE_2%);
 
     #UNIQUENAME(expectedDistribution);
     LOCAL %expectedDistribution% := DATASET
