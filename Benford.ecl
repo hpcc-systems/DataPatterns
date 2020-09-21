@@ -256,7 +256,7 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', digit = 1, sampleSize = 100) := FU
     // Helper function for computing chi-squared values from the interim results
     #UNIQUENAME(ComputeChiSquared);
     LOCAL %ComputeChiSquared%(%DataRec% expected, %DataRec% actual, UNSIGNED1 pos) := FUNCTION
-        Term(DECIMAL4_1 e, DECIMAL4_1 o) := ((o - e) * (o - e)) / e;
+        Term(DECIMAL4_1 e, DECIMAL4_1 o) := (((o - e) * (o - e)) / e);
 
         RETURN Term(expected.one, actual.one)
                 + Term(expected.two, actual.two)
