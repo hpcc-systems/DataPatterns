@@ -243,7 +243,7 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', digit = 1, sampleSize = 100) := FU
                     #SET(fieldNum, %fieldNum% + 1)
                     + TABLE
                         (
-                            %workingInFile%((INTEGER)%@name% != 0 AND LENGTH((STRING)((INTEGER)%@name%)) >= %minDigit%),
+                            %workingInFile%(LENGTH(REGEXREPLACE('[^\\d]', (STRING)%@name%, '')) >= %minDigit%),
                             {
                                 UNSIGNED2   %idField% := %fieldNum%,
                                 DECIMAL4_1  zero := IF(%clampedDigit% = 1, -1.0, COUNT(GROUP, %FirstDigit%((STRING)%@name%, %clampedDigit%) = 0) / COUNT(GROUP) * 100),
