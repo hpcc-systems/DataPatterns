@@ -539,7 +539,7 @@ The chi\_squared column represents the critical value for a chi-squared test.  I
 attribute's chi\_squared value is greater than the expected chi\_squared value then that
 attribute does not follow Benford's Law.
 
-In the above example, the trade\_date attribute fails the chi-squared test, as 68.182 > 20.09.
+In the above example, the trade\_date attribute fails the chi-squared test, as 468.182 > 20.09.
 This makes sense, because the data in that attribute is a date in YYYYMMDD format represented
 as an unsigned integer, and the dataset contains stock data for only the past few years.
 
