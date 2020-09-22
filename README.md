@@ -84,7 +84,7 @@ level, such as within your "My Files" folder.
 |1.6.4|Bump visualizer code, including dependencies, to latest versions; increase default lcbLimit value to 1000|
 |1.6.5|Significant (~75%) performance boost within the text pattern code  -- thanks to Manjunath Venkataswamy for finding the issue|
 |1.7.0|NormalizeProfileResults() now shows results for attributes within child datasets (text patterns, correlations, etc); addition of Benford() analysis function; add workaround to allow a child dataset to be cited in a fieldListStr argument in Profile()|
-|1.7.1||
+|1.7.1|Fix digit selection code in Benford|
 
 <a name="profile"></a>
 ### Profile
