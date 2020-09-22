@@ -168,26 +168,27 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', digit = 1, sampleSize = 100) := FU
             TABLE(%sampledData%, {#EXPAND(%trimmedFieldList%)})
         #END;
 
-    // Helper function that returns the first non-zero digit in a string
-    #UNIQUENAME(FirstDigit);
-    LOCAL UNSIGNED1 %FirstDigit%(VARSTRING s, UNSIGNED1 pos) := EMBED(C++)
+    // Helper function that returns the pos digit in a string; if pos = 1
+    // then th digit must be non-zero; returns 10 (an invalid *digit*)
+    // if no suitable digit is found
+    #UNIQUENAME(NthDigit);
+    LOCAL UNSIGNED1 %NthDigit%(STRING s, UNSIGNED1 pos) := EMBED(C++)
+        #option pure
         unsigned char   foundDigit = 10; // impossible value
         int             digitsFound = 0;
-        const char*     ch = s;
 
-        while (*ch)
+        for (unsigned int x = 0; x < lenS; x++)
         {
-            if (isdigit(*ch) && (pos > 1 || *ch != '0'))
+            char ch = s[x];
+            if (isdigit(ch) && (pos > 1 || ch != '0'))
             {
                 ++digitsFound;
                 if (digitsFound >= pos)
                 {
-                    foundDigit = *ch - 48;
+                    foundDigit = ch - '0';
                     break;
                 }
             }
-
-            ++ch;
         }
 
         return foundDigit;
@@ -246,16 +247,16 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', digit = 1, sampleSize = 100) := FU
                             %workingInFile%(LENGTH(REGEXREPLACE('[^\\d]', (STRING)%@name%, '')) >= %minDigit%),
                             {
                                 UNSIGNED2   %idField% := %fieldNum%,
-                                DECIMAL4_1  zero := IF(%clampedDigit% = 1, -1.0, COUNT(GROUP, %FirstDigit%((STRING)%@name%, %clampedDigit%) = 0) / COUNT(GROUP) * 100),
-                                DECIMAL4_1  one := COUNT(GROUP, %FirstDigit%((STRING)%@name%, %clampedDigit%) = 1) / COUNT(GROUP) * 100,
-                                DECIMAL4_1  two := COUNT(GROUP, %FirstDigit%((STRING)%@name%, %clampedDigit%) = 2) / COUNT(GROUP) * 100,
-                                DECIMAL4_1  three := COUNT(GROUP, %FirstDigit%((STRING)%@name%, %clampedDigit%) = 3) / COUNT(GROUP) * 100,
-                                DECIMAL4_1  four := COUNT(GROUP, %FirstDigit%((STRING)%@name%, %clampedDigit%) = 4) / COUNT(GROUP) * 100,
-                                DECIMAL4_1  five := COUNT(GROUP, %FirstDigit%((STRING)%@name%, %clampedDigit%) = 5) / COUNT(GROUP) * 100,
-                                DECIMAL4_1  six := COUNT(GROUP, %FirstDigit%((STRING)%@name%, %clampedDigit%) = 6) / COUNT(GROUP) * 100,
-                                DECIMAL4_1  seven := COUNT(GROUP, %FirstDigit%((STRING)%@name%, %clampedDigit%) = 7) / COUNT(GROUP) * 100,
-                                DECIMAL4_1  eight := COUNT(GROUP, %FirstDigit%((STRING)%@name%, %clampedDigit%) = 8) / COUNT(GROUP) * 100,
-                                DECIMAL4_1  nine := COUNT(GROUP, %FirstDigit%((STRING)%@name%, %clampedDigit%) = 9) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  zero := IF(%clampedDigit% = 1, -1.0, COUNT(GROUP, %NthDigit%((STRING)%@name%, %clampedDigit%) = 0) / COUNT(GROUP) * 100),
+                                DECIMAL4_1  one := COUNT(GROUP, %NthDigit%((STRING)%@name%, %clampedDigit%) = 1) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  two := COUNT(GROUP, %NthDigit%((STRING)%@name%, %clampedDigit%) = 2) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  three := COUNT(GROUP, %NthDigit%((STRING)%@name%, %clampedDigit%) = 3) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  four := COUNT(GROUP, %NthDigit%((STRING)%@name%, %clampedDigit%) = 4) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  five := COUNT(GROUP, %NthDigit%((STRING)%@name%, %clampedDigit%) = 5) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  six := COUNT(GROUP, %NthDigit%((STRING)%@name%, %clampedDigit%) = 6) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  seven := COUNT(GROUP, %NthDigit%((STRING)%@name%, %clampedDigit%) = 7) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  eight := COUNT(GROUP, %NthDigit%((STRING)%@name%, %clampedDigit%) = 8) / COUNT(GROUP) * 100,
+                                DECIMAL4_1  nine := COUNT(GROUP, %NthDigit%((STRING)%@name%, %clampedDigit%) = 9) / COUNT(GROUP) * 100,
                                 DECIMAL7_3  chi_squared := 0, // Fill in later
                                 UNSIGNED8   num_values := COUNT(GROUP),
                                 STRING      attribute := %'@name'%
