@@ -86,6 +86,7 @@ level, such as within your "My Files" folder.
 |1.7.0|NormalizeProfileResults() now shows results for attributes within child datasets (text patterns, correlations, etc); addition of Benford() analysis function; add workaround to allow a child dataset to be cited in a fieldListStr argument in Profile()|
 |1.7.1|Fix digit selection code in Benford|
 |1.7.2|Benford: Recognize implied trailing zeros after a decimal point|
+|1.7.3||
 
 <a name="profile"></a>
 ### Profile
