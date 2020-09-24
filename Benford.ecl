@@ -173,7 +173,7 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', digit = 1, sampleSize = 100) := FU
     // (an invalid *digit*) if no suitable digit is found
     #UNIQUENAME(NthDigit);
     LOCAL UNSIGNED1 %NthDigit%(STRING s, UNSIGNED1 pos) := EMBED(C++)
-        #option pure
+        #option pure;
         unsigned char   foundDigit = 10; // impossible value
         int             digitsFound = 0;
 
