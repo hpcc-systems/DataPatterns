@@ -28,7 +28,7 @@ bundle version instead (they coexist peacefully).
 
 This code is installed as an ECL Bundle.  Complete instructions for managing ECL
 Bundles can be found in [The ECL IDE and HPCC Client
-Tools](https://d2wulyp08c6njk.cloudfront.net/releases/CE-Candidate-7.6.0/docs/EN_US/TheECLIDEandHPCCClientTools_EN_US-7.6.0-1.pdf)
+Tools](https://cdn.hpccsystems.com/releases/CE-Candidate-7.12.0/docs/EN_US/TheECLIDEandHPCCClientTools_EN_US-7.12.0-1.pdf)
 documentation.
 
 Use the ecl command line tool to install this bundle:
