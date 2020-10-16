@@ -8,18 +8,21 @@ research tools to an ECL programmer.
   * [Installation](#installation)
   * [Release Notes](#release_notes)
   * [Profile()](#profile)
-  * [Summary Report with Graphs](#summary_report_with_graphs)
+    * [Summary Report with Graphs](#summary_report_with_graphs)
   * [NormalizeProfileResults()](#normalizeprofileresults)
   * [BestRecordStructure()](#bestrecordstructure)
+  * [Data Validation Submodule](#validation)
+    * [Validate()](#validation_validate)
+    * [Fix()](#validation_fix)
   * [Benford()](#benford)
-  * [Testing](#testing)
+  * [Profile() Testing](#testing)
 
 <a name="installation"></a>
 ### Installation
 
 **Note:**  `DataPatterns.Profile()` and `DataPatterns.BestRecordStructure()` are
 now included in HPCC version 7.4.0!  They have been added to the ECL Standard
-Library (`Std.DataPatterns`) and also integrated with ECL Watch so you can
+Library (within `Std.DataPatterns`) and also integrated with ECL Watch so you can
 create a profile from a saved logical file using only a web browser.  Note that
 the Std library version of Profile() will create a visualization of the results
 only when executed from ECL Watch; visualizations will not be generated if
@@ -40,7 +43,9 @@ executing the command, or use the full path to the ecl tool.
 
 After installation, all of the code here becomes available after you import it:
 
-    IMPORT DataPatterns;
+```ECL
+IMPORT DataPatterns;
+```
 
 Note that is possible to use this code without installing it as a bundle.  To do
 so, simply make it available within your IDE and just ignore the Bundle.ecl
@@ -50,6 +55,8 @@ level, such as within your "My Files" folder.
 
 <a name="release_notes"></a>
 ### Release Notes
+<details>
+<summary>Click to expand</summary>
 
 |Version|Notes|
 |:----:|:-----|
@@ -86,12 +93,14 @@ level, such as within your "My Files" folder.
 |1.7.0|NormalizeProfileResults() now shows results for attributes within child datasets (text patterns, correlations, etc); addition of Benford() analysis function; add workaround to allow a child dataset to be cited in a fieldListStr argument in Profile()|
 |1.7.1|Fix digit selection code in Benford|
 |1.7.2|Benford: Recognize implied trailing zeros after a decimal point|
-|1.7.3|Minor optimization in text pattern generation|
+|1.8.0|Addition of Validation module; minor optimization in text pattern generation|
+</details>
 
+---
 <a name="profile"></a>
 ### Profile
 
-Documentation as pulled from the beginning of Profile.ecl:
+Documentation as pulled from the beginning of [Profile.ecl](Profile.ecl):
 
     Profile() is a function macro for profiling all or part of a dataset.
     The output is a dataset containing the following information for each
@@ -278,18 +287,17 @@ Documentation as pulled from the beginning of Profile.ecl:
 
 Here is a very simple example of executing the full data profiling code:
 
-    IMPORT DataPatterns;
+```ECL
+IMPORT DataPatterns;
 
-    filePath := '~thor::my_sample_data';
-
-    ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
-
-    profileResults := DataPatterns.Profile(ds);
-
-    OUTPUT(profileResults, ALL, NAMED('profileResults'));
+filePath := '~thor::my_sample_data';
+ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
+profileResults := DataPatterns.Profile(ds);
+OUTPUT(profileResults, ALL, NAMED('profileResults'));
+```
 
 <a name="summary_report_with_graphs"></a>
-### Summary Report with Graphs
+### Profile(): Summary Report with Graphs
 
 A report is generated based on the output of `Profile()`. The report is
 accessible via a Workunit's *Resources* tab within ECL Watch. For example:
@@ -323,6 +331,7 @@ This is a screen capture displaying a report row for a string attribute
 
 ![Screen capture of two report rows](https://user-images.githubusercontent.com/1891935/56989566-c228d880-6b60-11e9-87a8-c2aa1c76b3d8.png)
 
+---
 <a name="normalizeprofileresults"></a>
 ### NormalizeProfileResults
 
@@ -354,17 +363,15 @@ is delimited with a ':' character.
 
 Sample code:
 
-    IMPORT DataPatterns;
+```ECL
+IMPORT DataPatterns;
 
-    filePath := '~thor::my_sample_data';
-
-    ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
-
-    profileResults := DataPatterns.Profile(ds);
-
-    normalizedResults := DataPatterns.NormalizeProfileResults(profileResults);
-
-    OUTPUT(normalizedResults, ALL, NAMED('normalizedResults'));
+filePath := '~thor::my_sample_data';
+ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
+profileResults := DataPatterns.Profile(ds);
+normalizedResults := DataPatterns.NormalizeProfileResults(profileResults);
+OUTPUT(normalizedResults, ALL, NAMED('normalizedResults'));
+```
 
 profileResults:
 
@@ -382,6 +389,7 @@ normalizedResults:
 |field1|fill\_rate|100|
 |field1|popular_patterns|AAAAAA:10&#124;AAA:5|
 
+---
 <a name="bestrecordstructure"></a>
 ### BestRecordStructure
 
@@ -394,15 +402,14 @@ will provide correct results.
 
 Sample call:
 
-    IMPORT DataPatterns;
+```ECL
+IMPORT DataPatterns;
 
-    filePath := '~thor::my_sample_data';
-
-    ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
-
-    recordDefinition := DataPatterns.BestRecordStructure(ds);
-
-    OUTPUT(recordDefinition, NAMED('recordDefinition'), ALL);
+filePath := '~thor::my_sample_data';
+ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
+recordDefinition := DataPatterns.BestRecordStructure(ds);
+OUTPUT(recordDefinition, NAMED('recordDefinition'), ALL);
+```
 
 The result will be a recordset containing only a STRING field.  The first
 record will always contain 'RECORD' and the last record will always contain
@@ -415,6 +422,258 @@ it is a good idea to add an ALL flag to the OUTPUT function.  This ensures that
 all attributes will be displayed.  Otherwise, if you have more than 100
 attributes in the given dataset, the result will be truncated.
 
+---
+<a name="validation"></a>
+### Data Validation Submodule
+
+Validation exists as a submodule within DataPatterns.  It contains two function
+macros:  `Validate()` and `Fix()`.
+
+`Validate()` provides an easy mechanism for testing expected field values at
+the record level, then append those test results to each record in a
+standardized layout.  Tests are named, and associated with each test is
+a bit of ECL that defines what a valid field should look like.  Fields with
+values that do not pass that test are flagged.
+
+`Fix()` is the other half of the testing:  Once you have the output from
+`Validate()` you will need to handle the failing field values somehow.  The
+`Fix()` function macro processes records with failures and gives you the
+opportunity to correct the error or to omit the record entirely.
+
+<a name="validation_validate"></a>
+#### Validation.Validate()
+
+Documentation as pulled from [Validation.ecl](Validation.ecl):
+
+Validation checks are defined within a semicolon-delimited STRING.  Each check
+should be in the following format:
+
+     <test_name>:<test_ecl>
+
+`test_name` should be a name somehow representing the check that is
+being performed.  The name will be included in the appended data if the
+check fails.  This name should clearly (but succinctly) describe what is
+being tested.  There is no requirement for a `test_name` to be unique
+(and there some use cases where you may not want it unique at all) but,
+in general, the name should be unique within a single `Validate()` call.
+Names should start with a letter and may contain letters, numbers, periods,
+dashes, and underscores.
+
+`test_ecl` is ECL code that performs the test.  If a string literal is
+included in the test then the apostrophes must be escaped because the test
+is being defined within a string.  If a `REGEXFIND()` or `REGEXREPLACE()`
+function is used and anything within the pattern needs to be escaped then
+the backslash must be double-escaped.  ECL already requires a single escape
+(`\\.` or `\\d`) but including it in a test here means you have to
+double-escape the backslash: `\\\\.` or `\\\\d`.
+
+The ECL code used during the test is executed within the scope of a single
+dataset record.  Syntax-wise, it is similar to creating an ECL filter clause.
+Like a filter, the ECL should evaluate to a `BOOLEAN` result and what you want
+to do is return `TRUE` if the data being tested is **valid**.  Invalid results,
+where the ECL returns `FALSE`, are what is appended to the dataset.
+
+`Validate()` imports the Std ECL library, so all standard library functions
+are available for use within a test.  Also, because `Validate()` is a function
+macro, any function that is in scope when `Validate()` is called may also be
+used within a test.  This provides quite a bit of flexibility when it comes
+to writing tests.  The example code below references `StartsWithAA()` which
+is an example of one of these user-supplied tests.
+
+`Validate()` also includes a few internally-defined functions for use within
+your tests as a convenience.  Some are coercion functions that alter a field's
+value, others are test functions.  These tests are not available for use in
+your own custom, externally-defined tests.
+
+Coercion helpers:
+
+    OnlyDigits(s)       Convert a single argument to a string and remove
+                        everything but numeric digits; returns a STRING
+
+    OnlyChars(s)        Convert a single argument to a UTF-8 string and remove
+                        everything but alphabetic characters; returns a
+                        UTF8 string
+
+    WithoutPunct(s)     Convert a single argument to a UTF-8 string and remove
+                        all punctuation characters; returns a UTF8 string
+
+    Patternize(s)       Create a 'text pattern' from the single argument,
+                        mapping character classes to a fixed palette:
+                            lowercase character -> a
+                            uppercase character -> A
+                            numeric digit       -> 9
+                            everything else     -> unchanged
+                        The result is returned as a UTF8 string
+
+Value testing helpers:
+
+    StrLen(s)           Convert a single argument to a UTF-8 string and return
+                        its length as an unsigned integer
+
+    IsOnlyDigits(s)     Return TRUE if every character in the value is a digit
+
+    IsOnlyUppercase(s)  Return TRUE if every character in the value is an
+                        uppercase character
+
+    IsOnlyLowercase(s)  Return TRUE if every character in the value is a
+                        lowercase character
+
+    IsDecimalNumber(s)  Return TRUE if the value is a number, possibly prefixed
+                        by a negative sign, and possibly including a decimal
+                        portion
+
+Record-level testing helpers:
+
+    AllFieldsFilled()   Tests every top-level field in the record by coercing
+                        the values to STRING and seeing if any of them are empty;
+                        returns TRUE if no field value is an empty string; note
+                        that this function accepts no argument
+
+Example test specifications:
+
+     MyValueIsPos:my_value > 0 // my_value must be greater than zero
+     SomeNumInRange:some_num BETWEEN 50 AND 100 // some_num must be 50..100
+     FIPSLength:StrLen(fips) = 5 // length of FIPS code must be 5
+     DatesOrdered:dateBegin <= dateEnd // make sure dates are not flipped
+
+Here is a complete example:
+
+```ECL
+IMPORT DataPatterns;
+
+filePath := '~thor::stock_data.txt';
+
+DataRec := RECORD
+    STRING  trade_date;
+    STRING  exchange_code;
+    STRING  stock_symbol;
+    STRING  opening_price;
+    STRING  high_price;
+    STRING  low_price;
+    STRING  closing_price;
+    STRING  shares_traded;
+    STRING  share_value;
+END;
+
+ds := DATASET(filePath, DataRec, CSV(SEPARATOR(''\t), HEADING(1)));
+
+// Custom, external field validation functions
+StartsWithAA(STRING s) := s[1..2] = 'AA';
+IsValidPrice(STRING price) := NOT(REGEXFIND('^\\d+?00$', price) AND (UNSIGNED)price >= 10000);
+
+checks := 'NonZeroLowPrice:(REAL)low_price > 0'
+            + '; NonZeroHighPrice:(REAL)high_price > 0'
+            + '; LowPriceLessOrEqualToHighPrice:(REAL)low_price <= (REAL)high_price'
+            + '; OpeningPriceGreaterThanOne:(REAL)opening_price > 1'
+            + '; OpeningPriceFormat:REGEXFIND(U8\'9+(\\\\.9{1,2})?\', Patternize(opening_price))'
+            + '; OpeningPriceValid:IsValidPrice(opening_price)'
+            + '; ClosingPriceValid:IsValidPrice(closing_price)'
+            + '; SymbolStartsWithAA:StartsWithAA(stock_symbol)'
+            + '; EveryFieldPresent:AllFieldsFilled()'
+            ;
+
+validationResult := DataPatterns.Validation.Validate(ds, specStr := checks);
+OUTPUT(validationResult, {validationResult}, '~thor::stock_data_validated', OVERWRITE, COMPRESSED);
+```
+<a name="validation_fix"></a>
+#### Validation.Fix()
+
+Fixes are defined within a semicolon-delimited STRING.  Each fix should
+be in the following format:
+
+     <membership_test>:<fix_ecl>
+
+`membership_test` is a logical clause testing whether one or more tests
+from the `Validate()` function is true for that record.  The entries here
+correspond to the `test_name` entries from the `Validate()` function and
+they can optionally form a boolean expression using AND and OR operators.
+At its simplest, a `membership_test` is just a single `test_name` entry and
+it will be interpreted as the following ECL:
+
+     ('test_name' IN vaidation_results.violations)
+
+More complex boolean expressions will use that as the basis.  For instance,
+testing for "`test_name_1` OR `test_name_2`" -- meaning, if either of the two
+validation checks failed, execute the `fix_ecl` code -- would be interpreted as the
+following ECL:
+
+      (('test_name_1' IN vaidation_results.violations)
+       OR
+       ('test_name_2' IN vaidation_results.violations))
+
+The NOT() operator is also available, so testing for the absence of a
+validation is supported.
+
+`fix_ecl` is ECL code that fixes the problem.  The most basic fix is
+redefining a field value (e.g. `my_field := new_value_expression`).
+If a string literal is included in the fix then the apostrophes must be
+escaped because it is being defined within a string.  If a `REGEXFIND()`
+or `REGEXREPLACE()` function is used and anything within the pattern needs
+to be escaped then the backslash must be double-escaped.  ECL already
+requires a single escape (`\\.` or `\\d`) but including it in a test here
+means you have to double-escape the backslash: `\\\\.` or `\\\\d`.
+
+The ECL code used during the fix is executed within the scope of a single
+dataset record.  This means that the expression may reference any field
+in the record.  There is no need to include SELF or LEFT scoping prefixes
+when citing a dataset field name.
+
+`Fix()` imports the Std ECL library, so all standard library functions
+are available for use within a fix.  Also, because `Fix()` is a function
+macro, any function that is in scope when `Fix()` is called may also be
+used within a fix.
+
+`Fix()` also includes a few internally-defined functions for use within
+your fixes as a convenience:
+
+     OnlyDigits(s)       Convert a single argument to a UTF-8 string and remove
+                         everything but numeric digits
+
+     OnlyChars(s)        Convert a single argument to a UTF-8 string and remove
+                         everything but alphabetic characters
+
+     WithoutPunct(s)     Convert a single argument to a UTF-8 string and remove
+                         all punctuation characters
+
+     Swap(f1, f2)        Swap the contents of two named fields
+
+     SkipRecord()        Remove the current record from the dataset
+
+Here is a complete example:
+
+```ECL
+IMPORT DataPatterns;
+
+ValRec := RECORD
+    UNSIGNED2       num_violations;
+    SET OF STRING   violations;
+END;
+
+LAYOUT := RECORD
+    STRING  trade_date;
+    STRING  exchange_code;
+    STRING  stock_symbol;
+    STRING  opening_price;
+    STRING  high_price;
+    STRING  low_price;
+    STRING  closing_price;
+    STRING  shares_traded;
+    STRING  share_value;
+    ValRec  validation_results;
+END;
+
+ds := DATASET('~thor::stock_data_validated', LAYOUT, FLAT);
+
+repairs := 'LowPriceLessThanOrEqualToHighPrice:Swap(high_price, low_price)'
+            + '; OpeningPriceValid AND ClosingPriceValid:SkipRecord()'
+            + '; OpeningPriceGreaterThanOne:opening_price := \'2\''
+            ;
+
+repairResults := DataPatterns.Validation.Fix(ds, specStr := repairs);
+OUTPUT(repairResults, {repairResults}, '~thor::stock_data_fixed', OVERWRITE, COMPRESSED);
+```
+
+---
 <a name="benford"></a>
 ### Benford
 
@@ -441,7 +700,10 @@ Security numbers.
 
 For more information: https://en.wikipedia.org/wiki/Benford%27s_law
 
-Documentation as pulled from the beginning of Benford.ecl:
+**Note:**  This function is also available in the ECL Standard Library
+as `Std.DataPatterns.Benford()` as of HPCC version 7.12.0.
+
+Documentation as pulled from the beginning of [Benford.ecl](Benford.ecl):
 
     Note that when computing the distribution of the most significant digit,
     the digit zero is ignored.  So for instance, the values 0100, 100, 1.0,
@@ -498,28 +760,30 @@ Documentation as pulled from the beginning of Benford.ecl:
 
 Sample call:
 
-    IMPORT DataPatterns;
+```ECL
+IMPORT DataPatterns;
 
-    filePath := '~thor::stock_data_';
+filePath := '~thor::stock_data_';
 
-    DataRec := RECORD
-        UNSIGNED4   trade_date;
-        STRING1     exchange_code;
-        STRING9     stock_symbol;
-        DECIMAL9_2  opening_price;
-        DECIMAL9_2  high_price;
-        DECIMAL9_2  low_price;
-        DECIMAL9_2  closing_price;
-        UNSIGNED4   shares_traded;
-        UNSIGNED4   share_value;
-    END;
+DataRec := RECORD
+	UNSIGNED4   trade_date;
+	STRING1     exchange_code;
+	STRING9     stock_symbol;
+	DECIMAL9_2  opening_price;
+	DECIMAL9_2  high_price;
+	DECIMAL9_2  low_price;
+	DECIMAL9_2  closing_price;
+	UNSIGNED4   shares_traded;
+	UNSIGNED4   share_value;
+END;
 
-    ds := DATASET(filePath, DataRec, FLAT);
+ds := DATASET(filePath, DataRec, FLAT);
 
-    // Analyze only the opening_price, closing_price, and trade_date attributes
-    benfordResult := DataPatterns.Benford(ds, 'opening_price, closing_price, trade_date');
+// Analyze only the opening_price, closing_price, and trade_date attributes
+benfordResult := DataPatterns.Benford(ds, 'opening_price, closing_price, trade_date');
 
-    OUTPUT(benfordResult, NAMED('benfordResult'), ALL);
+OUTPUT(benfordResult, NAMED('benfordResult'), ALL);
+```
 
 The result would look something like the following:
 
@@ -546,16 +810,18 @@ In the above example, the trade\_date attribute fails the chi-squared test, as 4
 This makes sense, because the data in that attribute is a date in YYYYMMDD format represented
 as an unsigned integer, and the dataset contains stock data for only the past few years.
 
+---
 <a name="testing"></a>
-### Testing
+### Profile() Testing
 
 The data profiling code can be easily tested with the included Tests module.
 hthor or ROXIE should be used to execute the tests, simply because Thor takes a
 relatively long time to execute them.  Here is how you invoke the tests:
 
-    IMPORT DataPatterns;
-
-    EVALUATE(DataPatterns.Tests);
+```ECL
+IMPORT DataPatterns;
+EVALUATE(DataPatterns.Tests);
+```
 
 If the tests pass then the execution will succeed and there will be no output.
 These tests may take some time to execute on Thor.  They run much faster on
