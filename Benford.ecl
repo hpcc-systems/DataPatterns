@@ -1,7 +1,7 @@
 /**
  * Benford's law, also called the Newcomb–Benford law, or the law of anomalous
- * numbers, is an observation about the frequency distribution of leading
- * digits in many real-life sets of numerical data.
+ * numbers, is an observation about the frequency distribution of digits in
+ * many real-life sets of numerical data.
  *
  * Benford's law doesn't apply to every set of numbers, but it usually applies
  * to large sets of naturally occurring numbers with some connection like:
@@ -43,7 +43,8 @@
  *                          process all top-level attributes in inFile;
  *                          OPTIONAL, defaults to an empty string
  * @param   digit           The 1-based digit within the number to examine; the
- *                          first significant digit is '1' and it only increases;
+ *                          first significant digit is '1' and it only increases
+ *                          (a value of '2' means 'second significant digit');
  *                          OPTIONAL, defaults to 1, meaning the most-significant
  *                          non-zero digit
  * @param   sampleSize      A positive integer representing a percentage of
@@ -58,16 +59,16 @@
  *
  *      RECORD
  *          STRING      attribute;   // Name of data attribute examined
- *          DECIMAL4_1  zero;        // Percentage of rows with digit of '0'
- *          DECIMAL4_1  one;         // Percentage of rows with digit of '1'
- *          DECIMAL4_1  two;         // Percentage of rows with digit of '2'
- *          DECIMAL4_1  three;       // Percentage of rows with digit of '3'
- *          DECIMAL4_1  four;        // Percentage of rows with digit of '4'
- *          DECIMAL4_1  five;        // Percentage of rows with digit of '5'
- *          DECIMAL4_1  six;         // Percentage of rows with digit of '6'
- *          DECIMAL4_1  seven;       // Percentage of rows with digit of '7'
- *          DECIMAL4_1  eight;       // Percentage of rows with digit of '8'
- *          DECIMAL4_1  nine;        // Percentage of rows with digit of '9'
+ *          DECIMAL4_1  zero;        // Percentage of rows with '0' in the 'digit' position
+ *          DECIMAL4_1  one;         // Percentage of rows with '1' in the 'digit' position
+ *          DECIMAL4_1  two;         // Percentage of rows with '2' in the 'digit' position
+ *          DECIMAL4_1  three;       // Percentage of rows with '3' in the 'digit' position
+ *          DECIMAL4_1  four;        // Percentage of rows with '4' in the 'digit' position
+ *          DECIMAL4_1  five;        // Percentage of rows with '5' in the 'digit' position
+ *          DECIMAL4_1  six;         // Percentage of rows with '6' in the 'digit' position
+ *          DECIMAL4_1  seven;       // Percentage of rows with '7' in the 'digit' position
+ *          DECIMAL4_1  eight;       // Percentage of rows with '8' in the 'digit' position
+ *          DECIMAL4_1  nine;        // Percentage of rows with '9' in the 'digit' position
  *          DECIMAL7_3  chi_squared; // Chi-squared "fitness test" result
  *          UNSIGNED8   num_values;  // Number of rows with non-zero values for this attribute
  *      END;
@@ -173,7 +174,7 @@ EXPORT Benford(inFile, fieldListStr = '\'\'', digit = 1, sampleSize = 100) := FU
     // (an invalid *digit*) if no suitable digit is found
     #UNIQUENAME(NthDigit);
     LOCAL UNSIGNED1 %NthDigit%(STRING s, UNSIGNED1 pos) := EMBED(C++)
-        #option pure
+        #option pure;
         unsigned char   foundDigit = 10; // impossible value
         int             digitsFound = 0;
 
