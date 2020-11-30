@@ -556,7 +556,7 @@ DataRec := RECORD
     STRING  share_value;
 END;
 
-ds := DATASET(filePath, DataRec, CSV(SEPARATOR(''\t), HEADING(1)));
+ds := DATASET(filePath, DataRec, CSV(SEPARATOR('\t'), HEADING(1)));
 
 // Custom, external field validation functions
 StartsWithAA(STRING s) := s[1..2] = 'AA';
