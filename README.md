@@ -94,6 +94,7 @@ level, such as within your "My Files" folder.
 |1.7.1|Fix digit selection code in Benford|
 |1.7.2|Benford: Recognize implied trailing zeros after a decimal point|
 |1.8.0|Addition of Validation module; minor optimization in text pattern generation|
+|1.8.1|Fix issue with correlation with a numeric field named 'row'|
 </details>
 
 ---
@@ -303,12 +304,6 @@ A report is generated based on the output of `Profile()`. The report is
 accessible via a Workunit's *Resources* tab within ECL Watch. For example:
 
 ![Screen capture displaying active Resources tab](https://user-images.githubusercontent.com/1891935/57020403-2ac29480-6bf7-11e9-9584-a6fd23a3b4c4.png)
-
-A report can also be viewed directly once a workunit has completed. For example:
-https://play.hpccsystems.com:18010/WsWorkunits/res/W20190430-175856/report/res/index.html
-(NOTE: This example URL was valid at the time of writing this README entry.)
-Simply swap out the host name and WUID in the URL with the WUID containing your
-Profile results to view your report.
 
 Every `attribute` in the Profile result is represented by a row of information.
 Each row of information is organized into several columns. Here is a short description
@@ -555,7 +550,7 @@ DataRec := RECORD
     STRING  share_value;
 END;
 
-ds := DATASET(filePath, DataRec, CSV(SEPARATOR(''\t), HEADING(1)));
+ds := DATASET(filePath, DataRec, CSV(SEPARATOR('\t'), HEADING(1)));
 
 // Custom, external field validation functions
 StartsWithAA(STRING s) := s[1..2] = 'AA';
