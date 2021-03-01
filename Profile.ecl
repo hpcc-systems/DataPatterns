@@ -1109,7 +1109,7 @@ EXPORT Profile(inFile,
                                     {
                                         %'fieldX'%,
                                         %'fieldY'%,
-                                        CORRELATION(_inFile, %fieldX%, %fieldY%)
+                                        CORRELATION(_inFile, _inFile.%fieldX%, _inFile.%fieldY%)
                                     }
                                     #SET(needsDelim, 1)
 
