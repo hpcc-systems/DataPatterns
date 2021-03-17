@@ -1,6 +1,7 @@
 .DS_Store
 .eclcc
 .vscode
+!.vscode/launch.json.sample
 *.out.res
 *.out_link.log.tmp
 eclcc.log

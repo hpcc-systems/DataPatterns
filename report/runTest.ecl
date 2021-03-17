@@ -1,6 +1,6 @@
 IMPORT ^ as DataPatterns;
 
-filePath := '~stock_data::cleaned_data';
+filePath := '~class::pfb::out::vehiclereexpanded';
 
 ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
 

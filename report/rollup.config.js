@@ -1,4 +1,4 @@
-import nodeResolve from 'rollup-plugin-node-resolve';
+import nodeResolve from '@rollup/plugin-node-resolve';
 
 const pkg = require("./package.json");
 
@@ -18,7 +18,7 @@ export default {
     external: externals,
     output: {
         file: pkg.main,
-        format: "amd",
+        format: "umd",
         sourcemap: true,
         globals: globals,
         name: pkg.name
