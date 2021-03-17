@@ -96,6 +96,7 @@ level, such as within your "My Files" folder.
 |1.8.0|Addition of Validation module; minor optimization in text pattern generation|
 |1.8.1|Fix issue with correlation with a numeric field named 'row'|
 |1.8.2|Security: Bump Viz Versions|
+|1.8.3||
 </details>
 
 ---
