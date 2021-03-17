@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Chrome",
+            "request": "launch",
+            "type": "pwa-chrome",
+            "url": "file:///${workspaceFolder}/report/res/index.html?W20210317-085811",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "play.hpccsystems.com",
+            "type": "ecl",
+            "request": "launch",
+            "protocol": "https",
+            "serverAddress": "play.hpccsystems.com",
+            "port": 18010,
+            "targetCluster": "thor",
+            "rejectUnauthorized": false,
+            "resultLimit": 100,
+            "timeoutSecs": 60,
+            "user": "datapatterns_developer",
+            "password": ""
+        }
+    ]
+}
