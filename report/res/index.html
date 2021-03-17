@@ -1,43 +1,47 @@
 <!DOCTYPE html>
 <html>
 
-    <head>
-        <meta charset="utf-8">
-        <title>HPCC: Visualization</title>
-        <link href="./index.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://viz.hpccsystems.com/v2.6.4/common/font-awesome/css/font-awesome.min.css">
-        <script src="https://viz.hpccsystems.com/v2.6.4/loader/dist/index.min.js"></script>
-        <script>
-            var espUrl = window.location.href;
-            var debugWuid = window.location.search.split("?")[1];
-            if (debugWuid) {
-                espUrl = "http://play.hpccsystems.com:8010/WsWorkunits/res/" + debugWuid + "/report/res/index.html";
+<head>
+    <meta charset="utf-8">
+    <title>HPCC: Visualization</title>
+    <link href="./index.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@hpcc-js/common@2.47.0/font-awesome/css/font-awesome.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/util@2.29.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/comms@2.40.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/common@2.47.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/api@2.8.42"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/chart@2.57.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/html@2.22.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/layout@2.24.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/phosphor@2.14.37"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/other@2.13.57"></script>
+    <script>
+        var espUrl = window.location.href;
+        var debugWuid = window.location.search.split("?")[1];
+        if (debugWuid) {
+            espUrl = "http://play.hpccsystems.com:8010/WsWorkunits/res/" + debugWuid + "/report/res/index.html";
+        }
+    </script>
+</head>
+
+<body onresize="resize();">
+    <div id="placeholder"></div>
+    <script src="./index.min.js"></script>
+    <script>
+        var app = new datapatterns.ReportTabs(espUrl)
+            .target("placeholder")
+            ;
+        resize();
+
+        function resize() {
+            if (app) {
+                app
+                    .resize()
+                    .lazyRender()
+                    ;
             }
-        </script>
-    </head>
-
-    <body onresize="resize();">
-        <div id="placeholder"></div>
-        <script>
-            var app;
-            window["@hpcc-js/loader"].amd("", false).then(function(require) {
-                require([debugWuid ? "../lib-umd/index" : "./index.min"], function (indexMod) {
-                    app = new indexMod.ReportTabs(espUrl)
-                        .target("placeholder")
-                        ;
-                    resize();
-                });
-            });
-
-            function resize() {
-                if (app) {
-                    app
-                        .resize()
-                        .lazyRender()
-                        ;
-                }
-            };
-        </script>
-    </body>
+        };
+    </script>
+</body>
 
 </html>
