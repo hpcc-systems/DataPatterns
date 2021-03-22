@@ -1,6 +1,6 @@
 ### DataPatterns
 
-DataPatterns is an ECL bundle that provides some basic data profiling and
+DataPatterns is an ECL bundle that provides data profiling and
 research tools to an ECL programmer.
 
 ### Table of Contents
