@@ -202,8 +202,10 @@ EXPORT Profile(inFile,
     #UNIQUENAME(fullName);                  // The full name of an attribute
     #UNIQUENAME(needsDelim);                // Boolean indicating whether we need to insert a delimiter somewhere
     #UNIQUENAME(namePos);                   // Contains character offset information, for parsing delimited strings
+    #UNIQUENAME(namePos2);                  // Contains character offset information, for parsing delimited strings
     #UNIQUENAME(numValue);                  // Extracted numeric value from a string
     #UNIQUENAME(nameValue);                 // Extracted string value from a string
+    #UNIQUENAME(nameValue2);                // Extracted string value from a string
 
     IMPORT Std;
 
@@ -278,7 +280,9 @@ EXPORT Profile(inFile,
             %ungroupedInFile%
         );
 
-    // Slim the dataset if the caller provided an explicit set of attributes
+    // Slim the dataset if the caller provided an explicit set of attributes;
+    // note that explicit attributes within a top-level child dataset will
+    // cause the entire top-level child dataset to be retained
     #UNIQUENAME(workingInFile);
     LOCAL %workingInFile% :=
         #IF(%trimmedFieldList% = '')
@@ -290,14 +294,23 @@ EXPORT Profile(inFile,
                     {
                         #SET(needsDelim, 0)
                         #SET(namePos, 1)
+                        #SET(nameValue2, '')
                         #LOOP
                             #SET(temp, REGEXFIND('^([^,]+)', %trimmedFieldList%[%namePos%..], 1))
                             #IF(%'temp'% != '')
-                                #IF(%needsDelim% = 1) , #END
+                                #SET(nameValue, REGEXFIND('^([^\\.]+)', %'temp'%, 1))
+                                #IF(NOT REGEXFIND('\\b' + %'nameValue'% + '\\b', %'nameValue2'%))
+                                    #IF(%'nameValue2'% != '')
+                                        #APPEND(nameValue2, ',')
+                                    #END
+                                    #APPEND(nameValue2, %'nameValue'%)
 
-                                TYPEOF(%sampledData%.%temp%) %temp% := %temp%
+                                    #IF(%needsDelim% = 1) , #END
 
-                                #SET(needsDelim, 1)
+                                    TYPEOF(%sampledData%.%nameValue%) %nameValue% := %nameValue%
+
+                                    #SET(needsDelim, 1)
+                                #END
                                 #SET(namePos, %namePos% + LENGTH(%'temp'%) + 1)
                             #ELSE
                                 #BREAK
@@ -1577,6 +1590,26 @@ EXPORT Profile(inFile,
             #IF(%'dsNameValue'% != '')
                 #SET(numValue, REGEXFIND('^(\\d+):', %'dsNameValue'%, 1))
                 #SET(nameValue, REGEXFIND(':([^:]+)$', %'dsNameValue'%, 1))
+                // Extract a list of fields within this child dataset if necessary
+                #SET(explicitScalarFields, '')
+                #SET(needsDelim, 0)
+                #SET(namePos2, 1)
+                #LOOP
+                    #SET(temp, REGEXFIND('^([^,]+)', %trimmedFieldList%[%namePos2%..], 1))
+                    #IF(%'temp'% != '')
+                        #SET(nameValue2, REGEXFIND('^' + %'nameValue'% + '\\.([^,]+)', %'temp'%, 1))
+                        #IF(%'nameValue2'% != '')
+                            #IF(%needsDelim% = 1)
+                                #APPEND(explicitScalarFields, ',')
+                            #END
+                            #APPEND(explicitScalarFields, %'nameValue2'%)
+                            #SET(needsDelim, 1)
+                        #END
+                        #SET(namePos2, %namePos2% + LENGTH(%'temp'%) + 1)
+                    #ELSE
+                        #BREAK
+                    #END
+                #END
                 // The child dataset should have been extracted into its own
                 // local attribute; reference it during our call to the inner
                 // profile function macro
@@ -1584,7 +1617,7 @@ EXPORT Profile(inFile,
                 + _Inner_Profile
                     (
                         GLOBAL(%temp%),
-                        '',
+                        %'explicitScalarFields'%,
                         maxPatterns,
                         maxPatternLen,
                         %lowCardinalityThreshold%,
