@@ -1,6 +1,6 @@
 ### DataPatterns
 
-DataPatterns is an ECL bundle that provides some basic data profiling and
+DataPatterns is an ECL bundle that provides data profiling and
 research tools to an ECL programmer.
 
 ### Table of Contents
@@ -11,6 +11,7 @@ research tools to an ECL programmer.
     * [Summary Report with Graphs](#summary_report_with_graphs)
   * [NormalizeProfileResults()](#normalizeprofileresults)
   * [BestRecordStructure()](#bestrecordstructure)
+  * [Cardinality()](#cardinality)
   * [Data Validation Submodule](#validation)
     * [Validate()](#validation_validate)
     * [Fix()](#validation_fix)
@@ -96,6 +97,7 @@ level, such as within your "My Files" folder.
 |1.8.0|Addition of Validation module; minor optimization in text pattern generation|
 |1.8.1|Fix issue with correlation with a numeric field named 'row'|
 |1.8.2|Security: Bump Viz Versions|
+|1.9.0|New functionality:  Cardinality() function; improve handling of specific child dataset fields in fieldListStr parameter; security updates|
 </details>
 
 ---
@@ -417,6 +419,43 @@ Note that, when outputing the result of `BestRecordStructure` to a workunit,
 it is a good idea to add an ALL flag to the OUTPUT function.  This ensures that
 all attributes will be displayed.  Otherwise, if you have more than 100
 attributes in the given dataset, the result will be truncated.
+
+---
+<a name="cardinality"></a>
+### Cardinality
+
+A portion of `Profile()` deals with cardinality.  If there is a low-enough number of
+unique values within an attribute, `Profile()` will automatically show those values
+along with the count of the number of records with each value.  But what if you're
+*really* interested in those values and want to see them all?  No matter how many
+there are?  Enter the `Cardinality()` function macro.
+
+`Cardinality()` finds all the unique values in one or more fields and displays the
+count of the number of records for each value, without limitation on the number of
+fields or the number of found values.  The result is a simple three-field dataset:
+
+    STRING      attribute;
+    UTF8        value;
+    UNSIGNED8   rec_count;
+
+The only required parameter to `Cardinality()` is a dataset to process.  You can
+optionally provide a comma-delimited string naming specific fields, if you don't
+want to process all of the fields.  You can also limit the analysis to only a portion
+of the dataset (though that is of probably limited usefulness).
+
+Sample call:
+
+```ECL
+IMPORT DataPatterns;
+
+filePath := '~thor::my_sample_data';
+ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
+cardinalityResults := DataPatterns.Cardinality(ds);
+OUTPUT(cardinalityResults, NAMED('cardinalityResults'));
+```
+
+See the comments at the beginning of the [Cardinality.ecl](Cardinality.ecl) file
+for more details.
 
 ---
 <a name="validation"></a>
