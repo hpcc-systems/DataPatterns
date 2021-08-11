@@ -97,7 +97,7 @@ level, such as within your "My Files" folder.
 |1.8.0|Addition of Validation module; minor optimization in text pattern generation|
 |1.8.1|Fix issue with correlation with a numeric field named 'row'|
 |1.8.2|Security: Bump Viz Versions|
-|1.9.0|New functionality:  Cardinality() function; improve handling of specific child dataset fields in fieldListStr parameter|
+|1.9.0|New functionality:  Cardinality() function; improve handling of specific child dataset fields in fieldListStr parameter; security updates|
 </details>
 
 ---
