@@ -1,4 +1,4 @@
-IMPORT DataPatterns;
+IMPORT $ AS DataPatterns;
 IMPORT Std;
 
 /**
