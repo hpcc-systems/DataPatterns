@@ -390,14 +390,14 @@ EXPORT Profile(inFile,
 
     // Define the record layout that will be used by the inner _Inner_Profile() call
     LOCAL ModeRec := RECORD
-        STRING                          value;
+        UTF8                            value;
         UNSIGNED4                       rec_count;
     END;
 
     LOCAL PatternCountRec := RECORD
         STRING                          data_pattern;
         UNSIGNED4                       rec_count;
-        STRING                          example;
+        UTF8                            example;
     END;
 
     LOCAL CorrelationRec := RECORD
@@ -629,7 +629,7 @@ EXPORT Profile(inFile,
         #UNIQUENAME(DataPattern_t);
         LOCAL %DataPattern_t% := #EXPAND('STRING' + %'foundMaxPatternLen'%);
         #UNIQUENAME(StringValue_t);
-        LOCAL %StringValue_t% := #EXPAND('STRING' + %'foundMaxPatternLen'%);
+        LOCAL %StringValue_t% := #EXPAND('UTF8_' + %'foundMaxPatternLen'%);
 
         // Create a dataset containing pattern information, string length, and
         // booleans indicating filled and numeric datatypes for each processed
@@ -697,9 +697,9 @@ EXPORT Profile(inFile,
                                                                             #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)|(boolean)', %'@type'%))
                                                                                 (%StringValue_t%)_inFile.#EXPAND(%'namePrefix'% + %'@name'%)
                                                                             #ELSEIF(REGEXFIND('string', %'@type'%))
-                                                                                %_TrimmedStr%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
+                                                                                %_TrimmedUni%(_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
                                                                             #ELSE
-                                                                                %_TrimmedStr%((%StringValue_t%)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
+                                                                                %_TrimmedUni%((%StringValue_t%)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
                                                                             #END,
                                                     UNSIGNED4           value_count := COUNT(GROUP),
                                                     %DataPattern_t%     data_pattern :=
@@ -1064,7 +1064,7 @@ EXPORT Profile(inFile,
                                 TRANSFORM
                                     (
                                         ModeRec,
-                                        SELF.value := LEFT.string_value,
+                                        SELF.value := (UTF8)LEFT.string_value,
                                         SELF.rec_count := LEFT.rec_count
                                     ),
                                 SMART
@@ -1211,7 +1211,7 @@ EXPORT Profile(inFile,
                 {
                     attribute,
                     data_pattern,
-                    STRING      example := string_value[..%foundMaxPatternLen%],
+                    UTF8        example := string_value[..%foundMaxPatternLen%],
                     UNSIGNED4   rec_count := SUM(GROUP, value_count)
                 },
                 attribute, data_pattern,
