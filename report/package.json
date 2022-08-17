@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@hpcc-js/util": "2.29.0",
-    "@hpcc-js/comms": "2.40.0",
+    "@hpcc-js/comms": "2.79.1",
     "@hpcc-js/common": "2.47.0",
     "@hpcc-js/api": "2.8.42",
     "@hpcc-js/chart": "2.57.0",
