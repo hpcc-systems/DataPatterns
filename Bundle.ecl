@@ -6,5 +6,5 @@ EXPORT Bundle := MODULE(Std.BundleBase)
     EXPORT License := 'http://www.apache.org/licenses/LICENSE-2.0';
     EXPORT Copyright := 'Copyright (C) 2023 HPCC Systems';
     EXPORT DependsOn := [];
-    EXPORT Version := '1.9.2';
+    EXPORT Version := '1.9.3';
 END;

@@ -527,6 +527,67 @@ EXPORT Profile(inFile,
         #UNIQUENAME(_MakeAttr);
         LOCAL %_MakeAttr%(STRING attr) := REGEXREPLACE('\\.', attr, '_');
 
+        // Determine if a UTF-8 string really contains UTF-8 characters
+        #UNIQUENAME(IsUTF8);
+        LOCAL BOOLEAN %IsUTF8%(UTF8 str) := EMBED(C++)
+            if (lenStr == 0)
+                return false;
+
+            const unsigned char*    bytes = reinterpret_cast<const unsigned char*>(str);
+            const unsigned char*    endPtr = bytes + lenStr;
+
+            while (bytes < endPtr)
+            {
+                if (bytes[0] == 0x09 || bytes[0] == 0x0A || bytes[0] == 0x0D || (0x20 <= bytes[0] && bytes[0] <= 0x7E))
+                {
+                    // ASCII; continue scan
+                    bytes += 1;
+                }
+                else if ((0xC2 <= bytes[0] && bytes[0] <= 0xDF) && (0x80 <= bytes[1] && bytes[1] <= 0xBF))
+                {
+                    // Valid non-overlong 2-byte
+                    return true;
+                }
+                else if (bytes[0] == 0xE0 && (0xA0 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF))
+                {
+                    // Valid excluding overlongs
+                    return true;
+                }
+                else if (((0xE1 <= bytes[0] && bytes[0] <= 0xEC) || bytes[0] == 0xEE || bytes[0] == 0xEF) && (0x80 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF))
+                {
+                    // Valid straight 3-byte
+                    return true;
+                }
+                else if (bytes[0] == 0xED && (0x80 <= bytes[1] && bytes[1] <= 0x9F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF))
+                {
+                    // Valid excluding surrogates
+                    return true;
+                }
+                else if (bytes[0] == 0xF0 && (0x90 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF))
+                {
+                    // Valid planes 1-3
+                    return true;
+                }
+                else if ((0xF1 <= bytes[0] && bytes[0] <= 0xF3) && (0x80 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF))
+                {
+                    // Valid planes 4-15
+                    return true;
+                }
+                else if (bytes[0] == 0xF4 && (0x80 <= bytes[1] && bytes[1] <= 0x8F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF))
+                {
+                    // Valid plane 16
+                    return true;
+                }
+                else
+                {
+                    // Invalid; abort
+                    return false;
+                }
+            }
+
+            return false;
+        ENDEMBED;
+
         // Pattern mapping a STRING datatype
         #UNIQUENAME(_MapAllStr);
         LOCAL STRING %_MapAllStr%(STRING s) := EMBED(C++)
@@ -552,9 +613,9 @@ EXPORT Profile(inFile,
         // Pattern mapping a UNICODE datatype; using regex due to the complexity
         // of the character set
         #UNIQUENAME(_MapUpperCharUni);
-        LOCAL %_MapUpperCharUni%(UNICODE s) := REGEXREPLACE(u'[[:upper:]]', s, u'A');
+        LOCAL %_MapUpperCharUni%(UNICODE s) := REGEXREPLACE(u'\\p{Uppercase_Letter}', s, u'A');
         #UNIQUENAME(_MapLowerCharUni);
-        LOCAL %_MapLowerCharUni%(UNICODE s) := REGEXREPLACE(u'[[:lower:]]', s, u'a');
+        LOCAL %_MapLowerCharUni%(UNICODE s) := REGEXREPLACE(u'[[\\p{Lowercase_Letter}][\\p{Titlecase_Letter}][\\p{Modifier_Letter}][\\p{Other_Letter}]]', s, u'a');
         #UNIQUENAME(_MapDigitUni);
         LOCAL %_MapDigitUni%(UNICODE s) := REGEXREPLACE(u'[1-9]', s, u'9'); // Leave '0' as-is and replace with '9' later
         #UNIQUENAME(_MapAllUni);
@@ -653,6 +714,7 @@ EXPORT Profile(inFile,
             UNSIGNED4           data_length;
             BOOLEAN             is_filled;
             BOOLEAN             is_number;
+            BOOLEAN             is_unicode;
         END;
 
         #UNIQUENAME(dataInfo);
@@ -757,6 +819,14 @@ EXPORT Profile(inFile,
                                                                                 TRUE
                                                                             #ELSE
                                                                                 FALSE
+                                                                            #END,
+                                                    BOOLEAN             is_unicode :=
+                                                                            #IF(%_IsSetType%(%'@type'%))
+                                                                                FALSE
+                                                                            #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
+                                                                                %IsUTF8%((UTF8)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
+                                                                            #ELSE
+                                                                                FALSE
                                                                             #END
                                                 },
                                                 _inFile.#EXPAND(%'namePrefix'% + %'@name'%),
@@ -847,11 +917,12 @@ EXPORT Profile(inFile,
                     given_attribute_type,
                     data_pattern,
                     data_length,
+                    is_unicode,
                     %DataTypeEnum%      type_flag := %BestTypeFlag%(TRIM(data_pattern), given_attribute_type),
                     UNSIGNED4           min_data_length := 0 // will be populated within %attributesWithTypeFlagsSummary%
 
                 },
-                attribute, given_attribute_type, data_pattern, data_length,
+                attribute, given_attribute_type, data_pattern, data_length, is_unicode,
                 MERGE
             );
 
@@ -873,6 +944,7 @@ EXPORT Profile(inFile,
                         RECORDOF(%attributeTypePatterns%),
                         SELF.data_length := MAX(LEFT.data_length, RIGHT.data_length),
                         SELF.min_data_length := %MinNotZero%(LEFT.data_length, RIGHT.data_length),
+                        SELF.is_unicode := LEFT.is_unicode OR RIGHT.is_unicode,
                         SELF.type_flag := IF(TRIM(RIGHT.attribute) != '', LEFT.type_flag & RIGHT.type_flag, LEFT.type_flag),
                         SELF := LEFT
                     ),
@@ -881,6 +953,7 @@ EXPORT Profile(inFile,
                         RECORDOF(%attributeTypePatterns%),
                         SELF.data_length := MAX(RIGHT1.data_length, RIGHT2.data_length),
                         SELF.min_data_length := %MinNotZero%(RIGHT1.data_length, RIGHT2.data_length),
+                        SELF.is_unicode := RIGHT1.is_unicode OR RIGHT2.is_unicode,
                         SELF.type_flag := RIGHT1.type_flag & RIGHT2.type_flag,
                         SELF := RIGHT1
                     ),
@@ -911,7 +984,8 @@ EXPORT Profile(inFile,
                                 (LEFT.type_flag & %DataTypeEnum%.SignedInteger) != 0                                    =>  'integer' + %Len2Size%(LEFT.data_length),
                                 (LEFT.type_flag & %DataTypeEnum%.FloatingPoint) != 0                                    =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
                                 (LEFT.type_flag & %DataTypeEnum%.ExpNotation) != 0                                      =>  'real8',
-                                REGEXFIND('utf', LEFT.given_attribute_type)                                             =>  LEFT.given_attribute_type,
+                                REGEXFIND('utf', LEFT.given_attribute_type) AND LEFT.is_unicode                         =>  LEFT.given_attribute_type,
+                                REGEXFIND('utf', LEFT.given_attribute_type)                                             =>  'string' + IF(LEFT.data_length > 0 AND (LEFT.data_length < (LEFT.min_data_length * 1000)), (STRING)LEFT.data_length, ''),
                                 REGEXREPLACE('\\d+$', TRIM(LEFT.given_attribute_type), '') + IF(LEFT.data_length > 0 AND (LEFT.data_length < (LEFT.min_data_length * 1000)), (STRING)LEFT.data_length, '')
                             ),
                         SELF := LEFT
