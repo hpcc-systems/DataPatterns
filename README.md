@@ -100,7 +100,7 @@ level, such as within your "My Files" folder.
 |1.9.0|New functionality:  Cardinality() function; improve handling of specific child dataset fields in fieldListStr parameter; security updates|
 |1.9.1|Fix IMPORT in (Profile) Tests module; support UTF-8 strings in Mode values and example text patterns|
 |1.9.2|Security updates|
-|1.9.3|Better identify upper- and lower-case Unicode characters in text patterns|
+|1.9.3|Better identify upper- and lower-case Unicode characters in text patterns; scan Unicode and UTF-8 strings to see if they can be represented with a STRING data type instead|
 </details>
 
 ---
