@@ -529,7 +529,9 @@ EXPORT Profile(inFile,
 
         // Determine if a UTF-8 string really contains UTF-8 characters
         #UNIQUENAME(IsUTF8);
-        LOCAL BOOLEAN %IsUTF8%(UTF8 str) := EMBED(C++)
+        LOCAL BOOLEAN %IsUTF8%(DATA str) := EMBED(C++)
+            #option pure;
+
             if (lenStr == 0)
                 return false;
 
@@ -543,37 +545,37 @@ EXPORT Profile(inFile,
                     // ASCII; continue scan
                     bytes += 1;
                 }
-                else if ((0xC2 <= bytes[0] && bytes[0] <= 0xDF) && (0x80 <= bytes[1] && bytes[1] <= 0xBF))
+                else if ((0xC2 <= bytes[0] && bytes[0] <= 0xDF) && (bytes+1 < endPtr) && (0x80 <= bytes[1] && bytes[1] <= 0xBF))
                 {
                     // Valid non-overlong 2-byte
                     return true;
                 }
-                else if (bytes[0] == 0xE0 && (0xA0 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF))
+                else if (bytes[0] == 0xE0 && (bytes+2 < endPtr) && (0xA0 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF))
                 {
                     // Valid excluding overlongs
                     return true;
                 }
-                else if (((0xE1 <= bytes[0] && bytes[0] <= 0xEC) || bytes[0] == 0xEE || bytes[0] == 0xEF) && (0x80 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF))
+                else if (((0xE1 <= bytes[0] && bytes[0] <= 0xEC) || bytes[0] == 0xEE || bytes[0] == 0xEF) && (bytes+2 < endPtr) && (0x80 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF))
                 {
                     // Valid straight 3-byte
                     return true;
                 }
-                else if (bytes[0] == 0xED && (0x80 <= bytes[1] && bytes[1] <= 0x9F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF))
+                else if (bytes[0] == 0xED && (bytes+2 < endPtr) && (0x80 <= bytes[1] && bytes[1] <= 0x9F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF))
                 {
                     // Valid excluding surrogates
                     return true;
                 }
-                else if (bytes[0] == 0xF0 && (0x90 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF))
+                else if (bytes[0] == 0xF0 && (bytes+3 < endPtr) && (0x90 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF))
                 {
                     // Valid planes 1-3
                     return true;
                 }
-                else if ((0xF1 <= bytes[0] && bytes[0] <= 0xF3) && (0x80 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF))
+                else if ((0xF1 <= bytes[0] && bytes[0] <= 0xF3) && (bytes+3 < endPtr) && (0x80 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF))
                 {
                     // Valid planes 4-15
                     return true;
                 }
-                else if (bytes[0] == 0xF4 && (0x80 <= bytes[1] && bytes[1] <= 0x8F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF))
+                else if (bytes[0] == 0xF4 && (bytes+3 < endPtr) && (0x80 <= bytes[1] && bytes[1] <= 0x8F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF))
                 {
                     // Valid plane 16
                     return true;
@@ -824,7 +826,7 @@ EXPORT Profile(inFile,
                                                                             #IF(%_IsSetType%(%'@type'%))
                                                                                 FALSE
                                                                             #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
-                                                                                %IsUTF8%((UTF8)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
+                                                                                %IsUTF8%((DATA)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
                                                                             #ELSE
                                                                                 FALSE
                                                                             #END
