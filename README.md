@@ -21,18 +21,19 @@ research tools to an ECL programmer.
 <a name="installation"></a>
 ### Installation
 
-**Note:**  `DataPatterns.Profile()` and `DataPatterns.BestRecordStructure()` are
-now included in HPCC version 7.4.0!  They have been added to the ECL Standard
-Library (within `Std.DataPatterns`) and also integrated with ECL Watch so you can
-create a profile from a saved logical file using only a web browser.  Note that
-the Std library version of Profile() will create a visualization of the results
-only when executed from ECL Watch; visualizations will not be generated if
-Profile() is called from ECL code.  If that is important to you, install this
-bundle version instead (they coexist peacefully).
+**Note:**  `Profile()`, `BestRecordStructure()` and `Benford()` are
+now included in the HPCC Systems platform!  They have been added to the ECL
+Standard Library (within `Std.DataPatterns`) and `Profile()` has also been
+integrated within ECL Watch so you can create a profile from a saved logical file
+using only a web browser.  Note that the Std library version of `Profile()` will
+create a visualization of the results only when executed from ECL Watch;
+visualizations will not be generated if `Std.DataPatterns.Profile()` is
+called from ECL code.  If that is important to you, install this bundle
+version instead (they coexist peacefully).
 
 This code is installed as an ECL Bundle.  Complete instructions for managing ECL
 Bundles can be found in [The ECL IDE and HPCC Client
-Tools](https://cdn.hpccsystems.com/releases/CE-Candidate-7.12.0/docs/EN_US/TheECLIDEandHPCCClientTools_EN_US-7.12.0-1.pdf)
+Tools](https://cdn.hpccsystems.com/releases/CE-Candidate-9.4.2/docs/EN_US/TheECLIDEandHPCCClientTools_EN_US-9.4.2-1.pdf)
 documentation.
 
 Use the ecl command line tool to install this bundle:
@@ -101,6 +102,7 @@ level, such as within your "My Files" folder.
 |1.9.1|Fix IMPORT in (Profile) Tests module; support UTF-8 strings in Mode values and example text patterns|
 |1.9.2|Security updates|
 |1.9.3|Better identify upper- and lower-case Unicode characters in text patterns; scan Unicode and UTF-8 strings to see if they can be represented with a STRING data type instead|
+|1.9.4|README fixes and updates; improve UTF-8 detection and prevent buffer overruns during character scans; use short form of Unicode property names in regex|
 </details>
 
 ---
