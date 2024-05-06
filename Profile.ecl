@@ -625,11 +625,24 @@ EXPORT Profile(inFile,
         #UNIQUENAME(_MapAllUni);
         LOCAL %_MapAllUni%(UNICODE s) := (STRING)%_MapDigitUni%(%_MapLowerCharUni%(%_MapUpperCharUni%(s)));
 
+        // Pattern mapping a UTF8 datatype; using regex due to the complexity
+        // of the character set
+        #UNIQUENAME(_MapUpperCharUTF8);
+        LOCAL %_MapUpperCharUTF8%(UTF8 s) := REGEXREPLACE(u8'\\p{Lu}', s, u8'A');
+        #UNIQUENAME(_MapLowerCharUTF8);
+        LOCAL %_MapLowerCharUTF8%(UTF8 s) := REGEXREPLACE(u8'[\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}]', s, u8'a');
+        #UNIQUENAME(_MapDigitUTF8);
+        LOCAL %_MapDigitUTF8%(UTF8 s) := REGEXREPLACE(u8'[1-9]', s, u8'9'); // Leave '0' as-is and replace with '9' later
+        #UNIQUENAME(_MapAllUTF8);
+        LOCAL %_MapAllUTF8%(UTF8 s) := (STRING)%_MapDigitUTF8%(%_MapLowerCharUTF8%(%_MapUpperCharUTF8%(s)));
+
         // Trimming strings
         #UNIQUENAME(_TrimmedStr);
         LOCAL %_TrimmedStr%(STRING s) := TRIM(s, LEFT, RIGHT);
         #UNIQUENAME(_TrimmedUni);
         LOCAL %_TrimmedUni%(UNICODE s) := TRIM(s, LEFT, RIGHT);
+        #UNIQUENAME(_TrimmedUTF8);
+        LOCAL %_TrimmedUTF8%(UTF8 s) := TRIM(s, LEFT, RIGHT);
 
         // Collect a list of the top-level attributes that we can process,
         // determine the actual maximum length of a data pattern (if we can
@@ -773,11 +786,17 @@ EXPORT Profile(inFile,
                                                                                 %_MapAllStr%(%_TrimmedStr%(Std.Str.CombineWords((SET OF STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%), ', '))[..%foundMaxPatternLen%])
                                                                             #ELSEIF(REGEXFIND('(integer)|(unsigned)|(decimal)|(real)', %'@type'%))
                                                                                 %_MapAllStr%((STRING)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))
-                                                                            #ELSEIF(REGEXFIND('(unicode)|(utf)', %'@type'%))
+                                                                            #ELSEIF(REGEXFIND('unicode', %'@type'%))
                                                                                 #IF(%@size% < 0 OR (%@size% DIV 2 + 1) > %foundMaxPatternLen%)
                                                                                     %_MapAllUni%(%_TrimmedUni%((UNICODE)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
                                                                                 #ELSE
                                                                                     %_MapAllUni%(%_TrimmedUni%((UNICODE)_inFile.#EXPAND(%'namePrefix'% + %'@name'%)))
+                                                                                #END
+                                                                            #ELSEIF(REGEXFIND('utf', %'@type'%))
+                                                                                #IF(%@size% < 0 OR (%@size% DIV 2 + 1) > %foundMaxPatternLen%)
+                                                                                    %_MapAllUTF8%(%_TrimmedUTF8%((UNICODE)_inFile.#EXPAND(%'namePrefix'% + %'@name'%))[..%foundMaxPatternLen%])
+                                                                                #ELSE
+                                                                                    %_MapAllUTF8%(%_TrimmedUTF8%((UNICODE)_inFile.#EXPAND(%'namePrefix'% + %'@name'%)))
                                                                                 #END
                                                                             #ELSEIF(REGEXFIND('string', %'@type'%))
                                                                                 #IF(%@size% < 0 OR %@size% > %foundMaxPatternLen%)
