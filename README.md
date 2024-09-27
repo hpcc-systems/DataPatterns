@@ -105,6 +105,7 @@ level, such as within your "My Files" folder.
 |1.9.4|README fixes and updates; improve UTF-8 detection and prevent buffer overruns during character scans; use short form of Unicode property names in regex|
 |1.9.5|Correct Unicode regex regression introduced in 1.9.4|
 |1.10.0|Security in visualization; expand "record count" fields from UNSIGNED4 to UNSIGNED6 -- thanks to Manjunath Venkataswamy for requesting this improvement; add UTF8-specific TRIM and regex calls to avoid casting if possible|
+|1.10.1||
 </details>
 
 ---
