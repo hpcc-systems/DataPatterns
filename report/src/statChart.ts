@@ -30,7 +30,7 @@ function myFormatter(format: string): (num: number) => string {
 export class StatChart extends HTMLWidget {
 
     private _selectMode: any;
-    private _tickFormatter: (_: number) => string;
+    private _tickFormatter: (_: number) => string = (_: number) => "" + _;
 
     private _bellCurve = new Scatter()
         .columns(["", "Std. Dev."])

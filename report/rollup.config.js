@@ -1,16 +1,10 @@
+import { readFileSync } from 'fs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 
-const pkg = require("./package.json");
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 function externals(id) {
     return id.indexOf("@hpcc-js/") === 0;
-}
-
-function globals(id) {
-    if (id.indexOf("@hpcc-js") === 0) {
-        return id;
-    }
-    return undefined;
 }
 
 export default {
@@ -18,12 +12,13 @@ export default {
     external: externals,
     output: {
         file: pkg.main,
-        format: "umd",
+        format: "es",
         sourcemap: true,
-        globals: globals,
         name: pkg.name
     },
     plugins: [
-        nodeResolve()
+        nodeResolve({
+            browser: true
+        })
     ]
 };

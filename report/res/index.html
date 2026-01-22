@@ -5,37 +5,50 @@
     <meta charset="utf-8">
     <title>HPCC: Visualization</title>
     <link href="./index.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@hpcc-js/common@2.47.0/font-awesome/css/font-awesome.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/util@2.29.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/comms@2.40.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/common@2.47.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/api@2.8.42"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/chart@2.57.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/html@2.22.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/layout@2.24.0"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/phosphor@2.14.37"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@hpcc-js/other@2.13.57"></script>
+    <link rel="stylesheet" href="https://esm.run/@hpcc-js/common@3.6.1/font-awesome/css/font-awesome.min.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "@hpcc-js/util": "https://esm.run/@hpcc-js/util@3.4.4",
+                "@hpcc-js/comms": "https://esm.run/@hpcc-js/comms@3.14.0",
+                "@hpcc-js/common": "https://esm.run/@hpcc-js/common@3.6.1",
+                "@hpcc-js/api": "https://esm.run/@hpcc-js/api@3.4.5",
+                "@hpcc-js/chart": "https://esm.run/@hpcc-js/chart@3.6.1",
+                "@hpcc-js/dgrid2": "https://esm.run/@hpcc-js/dgrid2@3.5.3",
+                "@hpcc-js/html": "https://esm.run/@hpcc-js/html@3.3.5",
+                "@hpcc-js/layout": "https://esm.run/@hpcc-js/layout@3.5.0",
+                "@hpcc-js/phosphor": "https://esm.run/@hpcc-js/phosphor@3.4.3",
+                "@hpcc-js/react": "https://esm.run/@hpcc-js/react@3.4.5",
+                "@hpcc-js/other": "https://esm.run/@hpcc-js/other@3.4.6"
+            }
+        }
+    </script>
+
     <script>
+        // Polyfill for Node.js globals needed by some dependencies
+        window.process = window.process || { env: { NODE_ENV: 'production' }, browser: true };
+
         var espUrl = window.location.href;
         var debugWuid = window.location.search.split("?")[1];
         if (debugWuid) {
-            espUrl = "http://play.hpccsystems.com:8010/WsWorkunits/res/" + debugWuid + "/report/res/index.html";
+            espUrl = "https://play.hpccsystems.com:18010/WsWorkunits/res/" + debugWuid + "/report/res/index.html";
         }
     </script>
 </head>
 
 <body onresize="resize();">
     <div id="placeholder"></div>
-    <script src="./index.min.js"></script>
-    <script>
-        var app = new datapatterns.ReportTabs(espUrl)
+    <script type="module">
+        import { ReportTabs } from "./index.min.js";
+        globalThis.__hpcc_app = new ReportTabs(espUrl)
             .target("placeholder")
             ;
         resize();
-
+    </script>
+    <script>
         function resize() {
-            if (app) {
-                app
+            if (globalThis.__hpcc_app) {
+                globalThis.__hpcc_app
                     .resize()
                     .lazyRender()
                     ;
