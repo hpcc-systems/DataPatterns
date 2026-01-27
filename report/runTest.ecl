@@ -1,6 +1,6 @@
 IMPORT ^ as DataPatterns;
 
-filePath := '~class::pfb::out::vehiclereexpanded';
+filePath := '~regress::multi::person';
 
 ds := DATASET(filePath, RECORDOF(filePath, LOOKUP), FLAT);
 

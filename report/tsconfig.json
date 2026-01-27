@@ -1,22 +1,18 @@
 {
     "compilerOptions": {
         "outDir": "./lib-umd",
-        "target": "es5",
-        "module": "umd",
+        "target": "es2022",
+        "module": "es2022",
         "moduleResolution": "node",
         "sourceMap": true,
         "declaration": true,
         "declarationDir": "./types",
-        "noImplicitAny": false,
         "noEmitOnError": false,
-        "noUnusedLocals": true,
-        "strictNullChecks": true,
-        "noImplicitThis": true,
-        "importHelpers": false,
+        "strict": true,
+        "noImplicitAny": false,
         "lib": [
             "dom",
-            "es5",
-            "es2015.promise"
+            "es2022"
         ],
         "types": []
     },
