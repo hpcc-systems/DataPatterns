@@ -106,7 +106,7 @@ level, such as within your "My Files" folder.
 |1.9.5|Correct Unicode regex regression introduced in 1.9.4|
 |1.10.0|Security in visualization; expand "record count" fields from UNSIGNED4 to UNSIGNED6 -- thanks to Manjunath Venkataswamy for requesting this improvement; add UTF8-specific TRIM and regex calls to avoid casting if possible|
 |1.10.2|Security updates in visualization packages|
-|1.10.3||
+|1.10.3|Security updates in visualization packages|
 </details>
 </details>
 
