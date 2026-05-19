@@ -25,7 +25,7 @@
     "@hpcc-js/api": "3.4.16",
     "@hpcc-js/chart": "3.7.5",
     "@hpcc-js/common": "3.7.6",
-    "@hpcc-js/comms": "3.15.5",
+    "@hpcc-js/comms": "3.15.8",
     "@hpcc-js/ddl-shim": "3.3.5",
     "@hpcc-js/dgrid2": "3.6.4",
     "@hpcc-js/html": "3.3.16",
@@ -33,7 +33,7 @@
     "@hpcc-js/other": "3.5.5",
     "@hpcc-js/phosphor": "3.5.5",
     "@hpcc-js/react": "3.4.16",
-    "@hpcc-js/util": "3.5.5"
+    "@hpcc-js/util": "3.5.7"
   },
   "devDependencies": {
     "@lumino/algorithm": "2.0.4",
