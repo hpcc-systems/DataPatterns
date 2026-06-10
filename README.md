@@ -110,6 +110,7 @@ level, such as within your "My Files" folder.
 |1.10.4|Security updates in visualization packages|
 |1.10.5|Security updates in visualization packages|
 |1.10.6|Don't propagate or recommend the UTF8_nnn data type; security updates in visualization packages|
+|1.10.7||
 </details>
 </details>
 
