@@ -110,7 +110,7 @@ level, such as within your "My Files" folder.
 |1.10.4|Security updates in visualization packages|
 |1.10.5|Security updates in visualization packages|
 |1.10.6|Don't propagate or recommend the UTF8_nnn data type; security updates in visualization packages|
-|1.10.7||
+|1.11.0|Set explicit MAXLENGTH on Correlations output to resolve issues with viewing results in ECL Watch for certain results; new argument 'allowZero'|
 </details>
 </details>
 
@@ -136,12 +136,12 @@ Documentation as pulled from the beginning of [Profile.ecl](Profile.ecl):
                                  was provided with a value less than 100
          fill_count              The number of rec_count records containing
                                  non-nil values; a 'nil value' is an empty
-                                 string, a numeric zero, or an empty SET; note
-                                 that BOOLEAN attributes are always counted as
-                                 filled, regardless of their value; also,
-                                 fixed-length DATA attributes (e.g. DATA10) are
-                                 also counted as filled, given their typical
-                                 function of holding data blobs
+                                 string, a numeric zero (see 'allowZero' argument),
+                                 or an empty SET; note that BOOLEAN attributes
+                                 are always counted as filled, regardless of
+                                 their value; also, fixed-length DATA attributes
+                                 (e.g. DATA10) are also counted as filled, given
+                                 their typical function of holding data blobs
          fill_rate               The percentage of rec_count records containing
                                  non-nil values; this is basically
                                  fill_count / rec_count * 100
@@ -302,6 +302,10 @@ Documentation as pulled from the beginning of [Profile.ecl](Profile.ecl):
                              parameter will be ignored if cardinality_breakdown
                              is not included in the features argument; OPTIONAL,
                              defaults to 64
+    @param   allowZero       A boolean that tells the profiling code to consider
+                             the number zero as a valid value (TRUE) or to consider
+                             it as a missing value (FALSE); OPTIONAL, defaults
+                             to FALSE.
 
 Here is a very simple example of executing the full data profiling code:
 
