@@ -1014,7 +1014,7 @@ EXPORT Profile(inFile,
                                 (LEFT.type_flag & %DataTypeEnum%.SignedInteger) != 0                                    =>  'integer' + %Len2Size%(LEFT.data_length),
                                 (LEFT.type_flag & %DataTypeEnum%.FloatingPoint) != 0                                    =>  'real' + IF(LEFT.data_length < 8, '4', '8'),
                                 (LEFT.type_flag & %DataTypeEnum%.ExpNotation) != 0                                      =>  'real8',
-                                REGEXFIND('utf', LEFT.given_attribute_type) AND LEFT.is_unicode                         =>  'utf8',
+                                REGEXFIND('utf', LEFT.given_attribute_type) AND LEFT.is_unicode                         =>  REGEXREPLACE('_\\d+$', TRIM(LEFT.given_attribute_type), ''),
                                 REGEXFIND('utf', LEFT.given_attribute_type)                                             =>  'string' + IF(LEFT.data_length > 0 AND (LEFT.data_length < (LEFT.min_data_length * 1000)), (STRING)LEFT.data_length, ''),
                                 REGEXREPLACE('\\d+$', TRIM(LEFT.given_attribute_type), '') + IF(LEFT.data_length > 0 AND (LEFT.data_length < (LEFT.min_data_length * 1000)), (STRING)LEFT.data_length, '')
                             ),
