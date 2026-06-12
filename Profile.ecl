@@ -431,7 +431,7 @@ EXPORT Profile(inFile,
         %NumericStat_t%                 numeric_lower_quartile;
         %NumericStat_t%                 numeric_median;
         %NumericStat_t%                 numeric_upper_quartile;
-        DATASET(CorrelationRec)         correlations {MAXCOUNT(%fieldCount%)};
+        DATASET(CorrelationRec)         correlations {MAXCOUNT(%fieldCount%), MAXLENGTH(64 * %fieldCount%)};
     END;
 
     // Define the record layout that will be returned to the caller; note
