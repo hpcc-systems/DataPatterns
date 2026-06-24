@@ -112,6 +112,7 @@ level, such as within your "My Files" folder.
 |1.10.6|Don't propagate or recommend the UTF8_nnn data type; security updates in visualization packages|
 |1.11.0|Set explicit MAXLENGTH on Correlations output to resolve issues with viewing results in ECL Watch for certain results; new argument 'allowZero'|
 |1.11.1|Pass locale-specific UTF8 data types through; security updates in visualization packages|
+|1.11.2||
 </details>
 </details>
 
