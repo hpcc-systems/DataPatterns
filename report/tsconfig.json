@@ -1,13 +1,15 @@
 {
     "compilerOptions": {
         "outDir": "./lib-umd",
+        "rootDir": "./src",
         "target": "es2022",
         "module": "es2022",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "sourceMap": true,
         "declaration": true,
         "declarationDir": "./types",
         "noEmitOnError": false,
+        "skipLibCheck": true,
         "strict": true,
         "noImplicitAny": false,
         "lib": [

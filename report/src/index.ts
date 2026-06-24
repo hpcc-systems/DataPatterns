@@ -6,8 +6,8 @@ import { DockPanel } from "@hpcc-js/phosphor";
 import { BreakdownTable, StyledTable } from "@hpcc-js/html";
 import { StatChart } from "./statChart";
 
-const knownProfileField = (sch: WsWorkunits.ECLSchemaItem): boolean => ["attribute", "given_attribute_type", "best_attribute_type", "rec_count", "fill_count", "fill_rate", "cardinality", "cardinality_breakdown", "modes", "min_length", "max_length", "ave_length", "popular_patterns", "rare_patterns", "is_numeric", "numeric_min", "numeric_max", "numeric_mean", "numeric_std_dev", "numeric_lower_quartile", "numeric_median", "numeric_upper_quartile", "numeric_correlations"].indexOf(sch.ColumnName) > 0;
-const countProfileFields = (r: Result): number => r.ECLSchemas.ECLSchemaItem.filter(knownProfileField).length;
+const knownProfileField = (sch: WsWorkunits.ECLSchemaItem): boolean => ["attribute", "given_attribute_type", "best_attribute_type", "rec_count", "fill_count", "fill_rate", "cardinality", "cardinality_breakdown", "modes", "min_length", "max_length", "ave_length", "popular_patterns", "rare_patterns", "is_numeric", "numeric_min", "numeric_max", "numeric_mean", "numeric_std_dev", "numeric_lower_quartile", "numeric_median", "numeric_upper_quartile", "numeric_correlations"].indexOf(sch.ColumnName ?? "") > 0;
+const countProfileFields = (r: Result): number => (r.ECLSchemas.ECLSchemaItem ?? []).filter(knownProfileField).length;
 const isProfileResult = (r: Result): boolean => countProfileFields(r) >= 4;
 
 const config = {
@@ -78,6 +78,8 @@ export class ReportTabs extends DockPanel {
 export interface ReportTabs {
     hideSingleTabs(): boolean;
     hideSingleTabs(_: boolean): this;
+    addWidget(widget: Widget, options: DockPanel.IAddWidgetOptions): this;
+    /** @deprecated Use options object form instead */
     addWidget(_: any, _2?: string, _3?: string, _4?: any): this;
 }
 
