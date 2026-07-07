@@ -49,7 +49,7 @@ After installation, all of the code here becomes available after you import it:
 IMPORT DataPatterns;
 ```
 
-Note that is possible to use this code without installing it as a bundle.  To do
+Note that it is possible to use this code without installing it as a bundle.  To do
 so, simply make it available within your IDE and just ignore the Bundle.ecl
 file. With the Windows IDE, the DataPatterns directory must not be a top-level
 item in your repository list; it needs to be installed one level below the top
@@ -112,15 +112,14 @@ level, such as within your "My Files" folder.
 |1.10.6|Don't propagate or recommend the UTF8_nnn data type; security updates in visualization packages|
 |1.11.0|Set explicit MAXLENGTH on Correlations output to resolve issues with viewing results in ECL Watch for certain results; new argument 'allowZero'|
 |1.11.1|Pass locale-specific UTF8 data types through; security updates in visualization packages|
-|1.11.2||
-</details>
+|1.11.2|Disable correlations by default in Profile(); clamp upper quartile lookup to available records; truncate cardinality and mode values at maxPatternLen|
 </details>
 
 ---
 <a name="profile"></a>
 ### Profile
 
-Documentation as pulled from the beginning of [Profile.ecl](Profile.ecl):
+Documentation adapted from the beginning of [Profile.ecl](Profile.ecl):
 
     Profile() is a function macro for profiling all or part of a dataset.
     The output is a dataset containing the following information for each
@@ -177,7 +176,7 @@ Documentation as pulled from the beginning of [Profile.ecl](Profile.ecl):
          rare_patterns           The least common patterns of values; see below
          is_numeric              Boolean indicating if the original attribute
                                  was a numeric scalar or if the best_attribute_type
-                                 value was a numeric scaler; if TRUE then the
+                                 value was a numeric scalar; if TRUE then the
                                  numeric_xxxx output fields will be
                                  populated with actual values; if this value
                                  is FALSE then all numeric_xxxx output values
@@ -261,7 +260,7 @@ Documentation as pulled from the beginning of [Profile.ecl](Profile.ecl):
     @param   features        A comma-delimited string listing the profiling
                              elements to be included in the output; OPTIONAL,
                              defaults to a comma-delimited string containing all
-                             of the available keywords:
+                             of the available keywords except correlations:
                                  KEYWORD                 AFFECTED OUTPUT
                                  fill_rate               fill_rate
                                                          fill_count
@@ -290,7 +289,8 @@ Documentation as pulled from the beginning of [Profile.ecl](Profile.ecl):
                              are active; also note that enabling the
                              cardinality_breakdown feature will also enable
                              the cardinality feature, even if it is not
-                             explicitly enabled
+                             explicitly enabled; correlations are disabled by
+                             default and must be explicitly requested
     @param   sampleSize      A positive integer representing a percentage of
                              inFile to examine, which is useful when analyzing a
                              very large dataset and only an estimated data
@@ -435,7 +435,7 @@ record will always contain 'RECORD' and the last record will always contain
 found within the given dataset.  The entire result can be copied and pasted
 into an ECL code module.
 
-Note that, when outputing the result of `BestRecordStructure` to a workunit,
+Note that, when outputting the result of `BestRecordStructure` to a workunit,
 it is a good idea to add an ALL flag to the OUTPUT function.  This ensures that
 all attributes will be displayed.  Otherwise, if you have more than 100
 attributes in the given dataset, the result will be truncated.
@@ -461,7 +461,7 @@ fields or the number of found values.  The result is a simple three-field datase
 The only required parameter to `Cardinality()` is a dataset to process.  You can
 optionally provide a comma-delimited string naming specific fields, if you don't
 want to process all of the fields.  You can also limit the analysis to only a portion
-of the dataset (though that is of probably limited usefulness).
+of the dataset (though that is probably of limited usefulness).
 
 Sample call:
 
@@ -498,7 +498,7 @@ opportunity to correct the error or to omit the record entirely.
 <a name="validation_validate"></a>
 #### Validation.Validate()
 
-Documentation as pulled from [Validation.ecl](Validation.ecl):
+Documentation adapted from [Validation.ecl](Validation.ecl):
 
 Validation checks are defined within a semicolon-delimited STRING.  Each check
 should be in the following format:
@@ -509,7 +509,7 @@ should be in the following format:
 being performed.  The name will be included in the appended data if the
 check fails.  This name should clearly (but succinctly) describe what is
 being tested.  There is no requirement for a `test_name` to be unique
-(and there some use cases where you may not want it unique at all) but,
+(and there are some use cases where you may not want it unique at all) but,
 in general, the name should be unique within a single `Validate()` call.
 Names should start with a letter and may contain letters, numbers, periods,
 dashes, and underscores.
@@ -645,16 +645,20 @@ they can optionally form a boolean expression using AND and OR operators.
 At its simplest, a `membership_test` is just a single `test_name` entry and
 it will be interpreted as the following ECL:
 
-     ('test_name' IN vaidation_results.violations)
+```ECL
+('test_name' IN validation_results.violations)
+```
 
 More complex boolean expressions will use that as the basis.  For instance,
 testing for "`test_name_1` OR `test_name_2`" -- meaning, if either of the two
 validation checks failed, execute the `fix_ecl` code -- would be interpreted as the
 following ECL:
 
-      (('test_name_1' IN vaidation_results.violations)
-       OR
-       ('test_name_2' IN vaidation_results.violations))
+```ECL
+(('test_name_1' IN validation_results.violations)
+ OR
+ ('test_name_2' IN validation_results.violations))
+```
 
 The NOT() operator is also available, so testing for the absence of a
 validation is supported.
@@ -758,7 +762,7 @@ For more information: https://en.wikipedia.org/wiki/Benford%27s_law
 **Note:**  This function is also available in the ECL Standard Library
 as `Std.DataPatterns.Benford()` as of HPCC version 7.12.0.
 
-Documentation as pulled from the beginning of [Benford.ecl](Benford.ecl):
+Documentation adapted from the beginning of [Benford.ecl](Benford.ecl):
 
     Note that when computing the distribution of the most significant digit,
     the digit zero is ignored.  So for instance, the values 0100, 100, 1.0,
