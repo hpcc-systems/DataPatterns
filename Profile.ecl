@@ -1145,10 +1145,10 @@ EXPORT Profile(inFile,
                             (
                                 %filledDataInfoNumeric%(attribute = %'namePrefix'% + %'@name'%),
                                 {
-                                    %StringValue_t% string_value := string_value[.._maxPatternLen],
+                                    %StringValue_t% string_value := TRIM(string_value[.._maxPatternLen], RIGHT),
                                     %RecCount_t% rec_count := SUM(GROUP, value_count)
                                 },
-                                string_value[.._maxPatternLen],
+                                TRIM(string_value[.._maxPatternLen], RIGHT),
                                 MERGE
                             );
 
