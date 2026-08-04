@@ -114,6 +114,7 @@ level, such as within your "My Files" folder.
 |1.11.1|Pass locale-specific UTF8 data types through; security updates in visualization packages|
 |1.11.2|Disable correlations by default in Profile(); clamp upper quartile lookup to available records; truncate cardinality and mode values at maxPatternLen; security updates in visualization packages|
 |1.11.3|Security updates in visualization packages|
+|1.11.4||
 </details>
 
 ---
