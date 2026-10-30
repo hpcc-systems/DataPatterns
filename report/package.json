@@ -26,7 +26,7 @@
     "@hpcc-js/api": "3.7.3",
     "@hpcc-js/chart": "3.11.1",
     "@hpcc-js/common": "3.12.1",
-    "@hpcc-js/comms": "3.22.1",
+    "@hpcc-js/comms": "3.23.1",
     "@hpcc-js/ddl-shim": "3.5.4",
     "@hpcc-js/dgrid2": "3.9.3",
     "@hpcc-js/html": "3.6.3",
