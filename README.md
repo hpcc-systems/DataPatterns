@@ -117,6 +117,7 @@ level, such as within your "My Files" folder.
 |1.11.4|Security updates in visualization packages|
 |1.11.5|Security updates in visualization packages|
 |1.11.6|Security updates in visualization packages|
+|1.11.7||
 </details>
 
 ---
